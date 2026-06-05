@@ -1,0 +1,52 @@
+# docker-compose.yml — liegt auf dem VPS unter /opt/hausfest26/docker-compose.yml
+#
+# Image kommt aus GHCR (gebaut vom GitHub-Actions-Workflow).
+# Auf dem VPS braucht es eine .env mit POSTGRES_PASSWORD (siehe .env.example).
+#
+# Reverse-Proxy (Caddy) läuft im /opt/ambardaellen/-Stack zentral
+# und proxiet hausfest.al-daellen.ch → hausfest26-app:3000 über das
+# externe Docker-Netzwerk `proxy`.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hausfest26-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hausfest26}
+      POSTGRES_USER: ${POSTGRES_USER:-hausfest26}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss in .env gesetzt sein}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hausfest26} -d ${POSTGRES_DB:-hausfest26}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  app:
+    image: ghcr.io/daellengarnier/hausfest26:latest
+    container_name: hausfest26-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      DATABASE_URL: postgres://${POSTGRES_USER:-hausfest26}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-hausfest26}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+      - proxy
+
+networks:
+  internal:
+    driver: bridge
+  proxy:
+    external: true
+
+volumes:
+  db-data:

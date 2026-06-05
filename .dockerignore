@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.github
+.vscode
+.idea
+.env*
+.DS_Store
+npm-debug.log*
+*.log
+README.md
+AGENTS.md
+CLAUDE.md
+deploy
+docker-compose*.yml
