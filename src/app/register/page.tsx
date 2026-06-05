@@ -5,21 +5,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 
-export default function LoginPage() {
-  const { login } = useAuth();
+export default function RegisterPage() {
+  const { register } = useAuth();
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (password.length < 6) return setError("Passwort muss mindestens 6 Zeichen haben.");
+    if (password !== confirm) return setError("Die beiden Passwörter stimmen nicht überein.");
     setLoading(true);
     try {
-      const { mustChangePassword } = await login(email.trim(), password);
-      router.replace(mustChangePassword ? "/passwort?forced=1" : "/");
+      await register({ name: name.trim(), email: email.trim(), password, code: code.trim() || undefined });
+      router.replace("/");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -36,51 +41,67 @@ export default function LoginPage() {
               <span className="h-2.5 w-2.5 rounded-full bg-pink-400" />
             </span>
           </div>
-          <h1 className="text-3xl font-bold">Hausfest 26</h1>
-          <p className="mt-1 text-white/80">Orga der Spinnerei</p>
+          <h1 className="text-3xl font-bold">Konto erstellen</h1>
+          <p className="mt-1 text-white/80">Hausfest 26 – Orga der Spinnerei</p>
         </div>
 
         <form onSubmit={submit} className="card space-y-4 p-6">
           <div>
-            <label className="label" htmlFor="email">
-              E-Mail
-            </label>
+            <label className="label" htmlFor="name">Name</label>
+            <input id="name" className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vorname" required />
+          </div>
+          <div>
+            <label className="label" htmlFor="email">E-Mail</label>
             <input
               id="email"
               type="email"
-              autoComplete="username"
+              autoComplete="email"
               className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@al-daellen.ch"
+              placeholder="deine@email.ch"
               required
             />
           </div>
           <div>
-            <label className="label" htmlFor="password">
-              Passwort
-            </label>
+            <label className="label" htmlFor="password">Passwort</label>
             <input
               id="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="mind. 6 Zeichen"
               required
             />
           </div>
+          <div>
+            <label className="label" htmlFor="confirm">Passwort bestätigen</label>
+            <input
+              id="confirm"
+              type="password"
+              autoComplete="new-password"
+              className="input"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="code">Einladungscode <span className="font-normal text-slate-400">(falls vorhanden)</span></label>
+            <input id="code" className="input" value={code} onChange={(e) => setCode(e.target.value)} />
+          </div>
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
           <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? "Anmelden …" : "Anmelden"}
+            {loading ? "Konto wird erstellt …" : "Registrieren"}
           </button>
           <p className="text-center text-sm text-slate-500">
-            Noch kein Konto?{" "}
-            <Link href="/register" className="font-medium text-accent">
-              Registrieren
+            Schon ein Konto?{" "}
+            <Link href="/login" className="font-medium text-accent">
+              Anmelden
             </Link>
           </p>
-          <p className="text-center text-xs text-slate-400">Angemeldet bleiben ist standardmässig aktiv.</p>
         </form>
       </div>
     </div>

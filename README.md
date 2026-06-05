@@ -42,16 +42,23 @@ npm install
 # .env mit DATABASE_URL anlegen, z. B.:
 #   DATABASE_URL=postgres://postgres@localhost:5432/hausfest26
 npm run db:migrate     # Schema anlegen (drizzle-kit migrate)
-npm run db:seed        # Accounts + Ressorts befüllen (idempotent)
+npm run db:seed        # Ressort-Struktur befüllen (idempotent, keine User)
 npm run dev            # http://localhost:3000
 ```
 
-### Erste Anmeldung
+### Registrierung & erste Anmeldung
 
-Seed-Accounts haben das Platzhalter-Passwort **`spinnfest`** (beim ersten Login
-zu ändern). Admin: `alain@fest.felsenau.org`. Weitere Mitglieder:
-`<name>@fest.felsenau.org` (z. B. `zoe@`, `baescht@`, `reto@`, `ambar@`,
-`lucien@`, `daellen@`, `nando@`).
+Es gibt **keine vorgefertigten Accounts**: Jede:r **registriert sich selbst**
+mit eigener E-Mail + Passwort (`/register`) und meldet sich danach an.
+
+- Der **erste registrierte Account wird automatisch Admin** (Bootstrap).
+- Zusätzlich können über `ADMIN_EMAILS` (kommagetrennt) bestimmte E-Mails beim
+  Registrieren direkt Admin werden.
+- Optional lässt sich die Registrierung mit `REGISTRATION_CODE` (gemeinsamer
+  Einladungscode) absichern – sinnvoll, da die App öffentlich erreichbar ist.
+
+Die Ressort-Struktur ist vorbefüllt; **Leads** vergibt der Admin nach der
+Registrierung im Admin-Bereich.
 
 ## Deploy
 
@@ -67,10 +74,11 @@ Push auf `main` → GitHub Actions baut das Image → SSH zum VPS →
 | Variable | Default | Beschreibung |
 |---|---|---|
 | `DATABASE_URL` | – | Postgres-Verbindung (Pflicht) |
-| `SEED_ON_START` | `true` | Seed beim Start ausführen (überspringt bei vorhandenen Nutzern) |
-| `SEED_PASSWORD` | `spinnfest` | Platzhalter-Passwort der Seed-/neuen Accounts |
+| `SEED_ON_START` | `true` | Ressort-Seed beim Start ausführen (überspringt, wenn Ressorts existieren) |
 | `SESSION_TTL_DAYS` | `30` | Gültigkeit „angemeldet bleiben" |
 | `COOKIE_SECURE` | `auto` | `true` erzwingt Secure-Cookies (in Prod automatisch an) |
+| `ADMIN_EMAILS` | – | Kommagetrennte E-Mails, die bei Registrierung Admin werden |
+| `REGISTRATION_CODE` | – | Falls gesetzt, ist dieser Einladungscode zum Registrieren nötig |
 
 ## Schema-Änderungen
 

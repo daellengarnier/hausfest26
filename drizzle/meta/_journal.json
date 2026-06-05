@@ -8,6 +8,13 @@
       "when": 1780664145136,
       "tag": "0000_skinny_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780666597901,
+      "tag": "0001_drop_seed_users",
+      "breakpoints": true
     }
   ]
 }

@@ -176,7 +176,7 @@ function AddUserModal({ open, onClose, onSaved }: { open: boolean; onClose: () =
         </div>
         <div>
           <label className="label">E-Mail</label>
-          <input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@fest.felsenau.org" />
+          <input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@al-daellen.ch" />
         </div>
         <div>
           <label className="label">Rolle</label>
