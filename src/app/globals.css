@@ -1,1 +1,88 @@
 @import "tailwindcss";
+
+/* Festival-/Spinnerei-Akzentfarben als Theme-Tokens (Tailwind v4). */
+@theme {
+  --color-accent: #6366f1;
+  --color-accent-dark: #4338ca;
+  --color-accent-light: #a5b4fc;
+  --color-ink: #0f172a;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #f1f5f9;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Safe-Area-Insets (iPhone-Notch / Home-Indicator). */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+}
+.pt-safe {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+}
+
+@layer components {
+  .btn,
+  .btn-primary,
+  .btn-ghost,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-medium transition active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100;
+  }
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent-dark;
+  }
+  .btn-ghost {
+    @apply bg-slate-100 text-slate-700 hover:bg-slate-200;
+  }
+  .btn-danger {
+    @apply bg-red-50 text-red-600 hover:bg-red-100;
+  }
+  .input {
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/30;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-slate-600;
+  }
+  .card {
+    @apply rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}
+
+/* Leichtgewichtige Protokoll-Vorschau (Markdown). */
+.prose-protocol h1 {
+  @apply mb-2 mt-3 text-lg font-bold;
+}
+.prose-protocol h2 {
+  @apply mb-1.5 mt-3 text-base font-bold;
+}
+.prose-protocol h3,
+.prose-protocol h4 {
+  @apply mb-1 mt-2 font-semibold;
+}
+.prose-protocol p {
+  @apply my-1.5;
+}
+.prose-protocol ul {
+  @apply my-1.5 list-disc pl-5;
+}
+.prose-protocol li {
+  @apply my-0.5;
+}
+.prose-protocol code {
+  @apply rounded bg-slate-200 px-1 py-0.5 text-[0.85em];
+}
+.prose-protocol strong {
+  @apply font-semibold;
+}
