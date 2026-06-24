@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('Styles'); ?>
+</head>
+<body>
+  <div class="topbar">
+    <span class="brand"><b>Cleverclip</b></span>
+    <span class="title">Translation Tool · Articulate XLIFF</span>
+    <span class="spacer"></span>
+    <span class="who" id="who"></span>
+  </div>
+
+  <div class="wrap">
+
+    <!-- ============ DASHBOARD ============ -->
+    <div id="view-list">
+      <div class="card">
+        <div class="between">
+          <h2 style="margin:0">New translation</h2>
+        </div>
+        <p class="muted small" style="margin:6px 0 16px">
+          Upload an Articulate XLIFF export (<code>.xlf</code> / <code>.xliff</code>, XLIFF 1.2).
+          It is parsed in your browser, then saved as a project.
+        </p>
+
+        <div class="drop" id="drop">
+          <h3>Drop XLIFF here</h3>
+          <p class="muted small" style="margin:0 0 14px">or</p>
+          <button class="btn primary" id="pick">Choose file</button>
+          <input type="file" id="file" accept=".xlf,.xliff,.xml" class="hidden">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="between" style="margin-bottom:12px">
+          <h2 style="margin:0">Projects</h2>
+          <button class="btn ghost sm" id="refresh">Refresh</button>
+        </div>
+        <div id="projects"><p class="muted small">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- ============ EDITOR ============ -->
+    <div id="view-edit" class="hidden">
+      <div class="card">
+        <div class="between">
+          <div>
+            <button class="btn ghost sm" id="back">← Projects</button>
+          </div>
+          <div class="row" style="align-items:center">
+            <button class="btn ghost sm danger" id="del">Delete</button>
+            <button class="btn ghost sm" id="autotrans">Auto-translate empty</button>
+            <button class="btn ghost sm" id="export">Export XLIFF</button>
+            <button class="btn primary sm" id="save">Save</button>
+          </div>
+        </div>
+
+        <h2 id="e-name" style="margin:14px 0 4px">—</h2>
+        <div class="row" style="align-items:center;margin-bottom:6px">
+          <span class="badge" id="e-status">—</span>
+          <span class="muted small" id="e-langs">—</span>
+          <span class="muted small" id="e-progress">—</span>
+        </div>
+
+        <label class="field" style="max-width:220px;margin-top:10px">
+          <span>Target language (override)</span>
+          <input type="text" id="e-target" placeholder="e.g. de-CH">
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="seg head">
+          <div>#</div>
+          <div>Source</div>
+          <div>Target</div>
+        </div>
+        <div id="segments"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="toast"></div>
+
+  <?!= include('JavaScript'); ?>
+</body>
+</html>

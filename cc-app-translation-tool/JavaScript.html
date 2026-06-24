@@ -1,0 +1,347 @@
+<script>
+/* ============================================================
+ * Cleverclip Translation Tool — client logic
+ * Parses Articulate XLIFF 1.2 in the browser, talks to the
+ * Apps Script backend via google.script.run, re-merges targets
+ * on export.
+ * ============================================================ */
+
+var state = {
+  project: null   // currently open project { id, fileName, segments, ... }
+};
+
+/* ---------- tiny helpers ---------- */
+function $(sel) { return document.querySelector(sel); }
+function el(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+  return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+var toastTimer;
+function toast(msg, isErr) {
+  var t = el('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.className = ''; }, 2600);
+}
+
+function run(fn) {
+  // returns a promise around google.script.run
+  var args = Array.prototype.slice.call(arguments, 1);
+  return new Promise(function (resolve, reject) {
+    var g = google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(function (e) { reject(e); });
+    g[fn].apply(g, args);
+  });
+}
+
+function busy(btn, on, label) {
+  if (on) {
+    btn.dataset.label = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> ' + (label || 'Working…');
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.label || btn.innerHTML;
+  }
+}
+
+/* ============================================================
+ * XLIFF parsing (Articulate exports XLIFF 1.2)
+ * ============================================================ */
+
+/**
+ * Parse XLIFF text -> { sourceLang, targetLang, segments:[{id,source,target}] }
+ * Inline tags inside <source> are flattened to their text content for editing;
+ * the original XLIFF is kept verbatim so export can re-merge targets by id.
+ */
+function parseXliff(text) {
+  var doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) {
+    throw new Error('This file is not valid XML / XLIFF.');
+  }
+
+  var fileEl = doc.querySelector('file');
+  var sourceLang = fileEl ? (fileEl.getAttribute('source-language') || '') : '';
+  var targetLang = fileEl ? (fileEl.getAttribute('target-language') || '') : '';
+
+  var units = doc.getElementsByTagName('trans-unit');
+  if (!units.length) throw new Error('No <trans-unit> elements found — is this an XLIFF export?');
+
+  var segments = [];
+  for (var i = 0; i < units.length; i++) {
+    var u = units[i];
+    var srcEl = u.getElementsByTagName('source')[0];
+    var tgtEl = u.getElementsByTagName('target')[0];
+    var id = u.getAttribute('id') || ('seg-' + i);
+    segments.push({
+      id: id,
+      source: srcEl ? textOf(srcEl) : '',
+      target: tgtEl ? textOf(tgtEl) : ''
+    });
+  }
+  return { sourceLang: sourceLang, targetLang: targetLang, segments: segments };
+}
+
+/** Plain text content of an element (inline tags flattened). */
+function textOf(node) {
+  return (node.textContent || '').replace(/\s+\n/g, '\n');
+}
+
+/**
+ * Re-merge: take the ORIGINAL xliff text, set <target> for each trans-unit
+ * from the edited segments (matched by id), serialise back to a string.
+ */
+function mergeXliff(originalXliff, segments) {
+  var byId = {};
+  segments.forEach(function (s) { byId[s.id] = s.target || ''; });
+
+  var doc = new DOMParser().parseFromString(originalXliff, 'application/xml');
+  var fileEl = doc.querySelector('file');
+
+  var units = doc.getElementsByTagName('trans-unit');
+  for (var i = 0; i < units.length; i++) {
+    var u = units[i];
+    var id = u.getAttribute('id') || ('seg-' + i);
+    if (!(id in byId)) continue;
+
+    var tgt = u.getElementsByTagName('target')[0];
+    if (!tgt) {
+      tgt = doc.createElementNS(u.namespaceURI, 'target');
+      var src = u.getElementsByTagName('source')[0];
+      if (src && src.nextSibling) {
+        src.parentNode.insertBefore(tgt, src.nextSibling);
+      } else {
+        u.appendChild(tgt);
+      }
+    }
+    // replace target content with plain translated text
+    while (tgt.firstChild) tgt.removeChild(tgt.firstChild);
+    tgt.appendChild(doc.createTextNode(byId[id]));
+  }
+
+  // ensure the file element advertises the target language
+  if (fileEl && state.project && state.project.targetLang) {
+    fileEl.setAttribute('target-language', state.project.targetLang);
+  }
+
+  return new XMLSerializer().serializeToString(doc);
+}
+
+function download(filename, text) {
+  var blob = new Blob([text], { type: 'application/xml;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+}
+
+/* ============================================================
+ * Dashboard
+ * ============================================================ */
+
+function showList() {
+  state.project = null;
+  el('view-edit').classList.add('hidden');
+  el('view-list').classList.remove('hidden');
+  loadProjects();
+}
+
+function loadProjects() {
+  el('projects').innerHTML = '<p class="muted small">Loading…</p>';
+  run('listProjects').then(function (rows) {
+    if (!rows.length) {
+      el('projects').innerHTML = '<p class="muted small">No projects yet. Upload an XLIFF file above.</p>';
+      return;
+    }
+    el('projects').innerHTML = rows.map(projectRow).join('');
+    rows.forEach(function (p) {
+      el('open-' + p.id).onclick = function () { openProject(p.id); };
+    });
+  }).catch(function (e) {
+    el('projects').innerHTML = '<p class="small" style="color:var(--danger)">' + esc(e.message || e) + '</p>';
+  });
+}
+
+function projectRow(p) {
+  var pct = p.segmentCount ? Math.round(100 * p.translatedCount / p.segmentCount) : 0;
+  var statusCls = String(p.status).replace(/\s+/g, '-');
+  return '' +
+    '<div class="project">' +
+      '<div>' +
+        '<div class="name">' + esc(p.fileName) + '</div>' +
+        '<div class="meta">' + esc(p.sourceLang || '?') + ' → ' + esc(p.targetLang || '?') +
+          ' · ' + p.translatedCount + '/' + p.segmentCount + ' segments</div>' +
+        '<div class="bar" style="margin-top:6px;max-width:260px"><i style="width:' + pct + '%"></i></div>' +
+      '</div>' +
+      '<div class="row" style="align-items:center;justify-content:flex-end">' +
+        '<span class="badge ' + statusCls + '">' + esc(p.status) + '</span>' +
+        '<button class="btn sm" id="open-' + p.id + '">Open</button>' +
+      '</div>' +
+    '</div>';
+}
+
+/* ============================================================
+ * Upload
+ * ============================================================ */
+
+function handleFile(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    var text = reader.result;
+    var parsed;
+    try {
+      parsed = parseXliff(text);
+    } catch (e) {
+      toast(e.message || 'Could not parse file', true);
+      return;
+    }
+    toast('Saving ' + parsed.segments.length + ' segments…');
+    run('createProject', {
+      fileName: file.name,
+      sourceLang: parsed.sourceLang,
+      targetLang: parsed.targetLang,
+      segments: parsed.segments,
+      xliff: text
+    }).then(function (id) {
+      toast('Project created');
+      openProject(id);
+    }).catch(function (e) { toast(e.message || e, true); });
+  };
+  reader.readAsText(file);
+}
+
+/* ============================================================
+ * Editor
+ * ============================================================ */
+
+function openProject(id) {
+  run('getProject', id).then(function (p) {
+    state.project = p;
+    renderEditor();
+    el('view-list').classList.add('hidden');
+    el('view-edit').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }).catch(function (e) { toast(e.message || e, true); });
+}
+
+function renderEditor() {
+  var p = state.project;
+  el('e-name').textContent = p.fileName;
+  el('e-langs').textContent = (p.sourceLang || '?') + ' → ' + (p.targetLang || '?');
+  el('e-target').value = p.targetLang || '';
+  updateHeader();
+
+  el('segments').innerHTML = p.segments.map(function (s, i) {
+    return '' +
+      '<div class="seg">' +
+        '<div class="ix">' + (i + 1) + '</div>' +
+        '<div class="src">' + esc(s.source) + '</div>' +
+        '<div><textarea data-i="' + i + '">' + esc(s.target) + '</textarea></div>' +
+      '</div>';
+  }).join('');
+
+  // bind edits
+  Array.prototype.forEach.call(el('segments').querySelectorAll('textarea'), function (ta) {
+    ta.addEventListener('input', function () {
+      var i = Number(ta.getAttribute('data-i'));
+      state.project.segments[i].target = ta.value;
+      updateHeader();
+    });
+  });
+}
+
+function updateHeader() {
+  var p = state.project;
+  var total = p.segments.length;
+  var done = p.segments.filter(function (s) { return s.target && s.target.trim() !== ''; }).length;
+  var status = done === 0 ? 'New' : (done >= total ? 'Done' : 'In progress');
+  var b = el('e-status');
+  b.textContent = status;
+  b.className = 'badge ' + status.replace(/\s+/g, '-');
+  el('e-progress').textContent = '· ' + done + '/' + total + ' translated';
+}
+
+function saveProject() {
+  var p = state.project;
+  p.targetLang = el('e-target').value.trim() || p.targetLang;
+  busy(el('save'), true, 'Saving…');
+  run('updateProject', p.id, { segments: p.segments, targetLang: p.targetLang })
+    .then(function () { toast('Saved'); busy(el('save'), false); })
+    .catch(function (e) { toast(e.message || e, true); busy(el('save'), false); });
+}
+
+function autoTranslate() {
+  var p = state.project;
+  var target = el('e-target').value.trim() || p.targetLang;
+  if (!target) { toast('Set a target language first', true); return; }
+  p.targetLang = target;
+  busy(el('autotrans'), true, 'Translating…');
+  run('autoTranslate', p.segments, p.sourceLang, target, false)
+    .then(function (segments) {
+      state.project.segments = segments;
+      renderEditor();
+      toast('Auto-translated empty segments');
+      busy(el('autotrans'), false);
+      saveProject();
+    })
+    .catch(function (e) { toast(e.message || e, true); busy(el('autotrans'), false); });
+}
+
+function exportProject() {
+  var p = state.project;
+  if (!p.xliff) { toast('Original XLIFF missing for this project', true); return; }
+  try {
+    var merged = mergeXliff(p.xliff, p.segments);
+    var name = p.fileName.replace(/\.(xlf|xliff|xml)$/i, '') + '.' + (p.targetLang || 'translated') + '.xlf';
+    download(name, merged);
+    toast('Exported ' + name);
+  } catch (e) {
+    toast(e.message || e, true);
+  }
+}
+
+function deleteProject() {
+  if (!confirm('Delete this project? This cannot be undone.')) return;
+  run('deleteProject', state.project.id)
+    .then(function () { toast('Deleted'); showList(); })
+    .catch(function (e) { toast(e.message || e, true); });
+}
+
+/* ============================================================
+ * Wire up
+ * ============================================================ */
+
+document.addEventListener('DOMContentLoaded', function () {
+  // upload
+  el('pick').onclick = function () { el('file').click(); };
+  el('file').onchange = function () { handleFile(this.files[0]); this.value = ''; };
+
+  var drop = el('drop');
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function (e) {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  // dashboard
+  el('refresh').onclick = loadProjects;
+
+  // editor
+  el('back').onclick = showList;
+  el('save').onclick = saveProject;
+  el('autotrans').onclick = autoTranslate;
+  el('export').onclick = exportProject;
+  el('del').onclick = deleteProject;
+
+  loadProjects();
+});
+</script>
