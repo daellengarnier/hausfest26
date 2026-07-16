@@ -10,7 +10,6 @@ import { Avatar, Spinner } from "@/components/Ui";
 const TABS = [
   { href: "/", label: "Übersicht", icon: "🏠", exact: true },
   { href: "/mine", label: "Meine Sachen", icon: "✅", exact: false },
-  { href: "/meetings", label: "Sitzungen", icon: "📅", exact: false },
   { href: "/inbox", label: "Inbox", icon: "🔔", exact: false, badge: true },
 ];
 
@@ -132,7 +131,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 px-4 py-4 pb-28">{children}</main>
 
       <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl border-t border-slate-900/5 bg-white/90 backdrop-blur-lg">
-        <div className="grid grid-cols-4 px-1 pt-1">
+        <div className="grid grid-cols-3 px-1 pt-1">
           {TABS.map((t) => {
             const isActive = t.exact ? pathname === t.href : pathname.startsWith(t.href);
             return (

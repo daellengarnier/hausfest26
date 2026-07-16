@@ -79,7 +79,7 @@ export default function DashboardPage() {
                 >
                   {r.openTodos} offen{r.totalTodos > 0 ? ` / ${r.totalTodos}` : ""}
                 </span>
-                {r.hatZeitplan && <span className="chip bg-fuchsia-100 text-fuchsia-700">🎧 Zeitplan</span>}
+                {r.hatZeitplan && <span className="chip bg-fuchsia-100 text-fuchsia-700">🎧 Line-up</span>}
                 {r.nextMeeting && <span className="chip bg-slate-100 text-slate-600">📅 {formatDate(r.nextMeeting.datum)}</span>}
                 <span className="ml-auto text-slate-400">{r.lastActivity ? relTime(r.lastActivity) : "still"}</span>
               </div>

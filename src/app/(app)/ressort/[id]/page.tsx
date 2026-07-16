@@ -72,7 +72,7 @@ export default function RessortPage() {
         {ressort.hatZeitplan && (
           <>
             <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "zeitplan" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("zeitplan")}>
-              Zeitplan
+              Line-up
             </button>
             <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "bars" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("bars")}>
               Bars
@@ -109,7 +109,7 @@ export default function RessortPage() {
                   <EmptyState icon="🌱" title="Noch keine Todos" hint="Leg das erste an." />
                 </div>
               ) : (
-                todosWithoutSub.map((t) => <TodoRow key={t.id} todo={t} onChanged={load} />)
+                todosWithoutSub.map((t) => <TodoRow key={t.id} todo={t} onChanged={load} onDeleted={load} />)
               )}
             </div>
           )}
@@ -135,7 +135,7 @@ export default function RessortPage() {
                     {subTodos.length === 0 ? (
                       <p className="px-4 py-3 text-sm text-slate-400">Noch keine Todos in diesem Sub-Ressort.</p>
                     ) : (
-                      subTodos.map((t) => <TodoRow key={t.id} todo={t} onChanged={load} />)
+                      subTodos.map((t) => <TodoRow key={t.id} todo={t} onChanged={load} onDeleted={load} />)
                     )}
                     <button
                       className="w-full px-4 py-2.5 text-left text-sm font-medium text-accent hover:bg-slate-50"

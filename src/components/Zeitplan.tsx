@@ -112,7 +112,7 @@ export function Zeitplan({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-semibold">{mode === "bars" ? "Öffnungszeiten" : "Zeitplan"}</h2>
+          <h2 className="font-semibold">{mode === "bars" ? "Öffnungszeiten" : "Line-up"}</h2>
           <p className="text-xs text-slate-500">16:00 – 08:00 · nach unten scrollen</p>
         </div>
         <div className="flex flex-wrap gap-2">
