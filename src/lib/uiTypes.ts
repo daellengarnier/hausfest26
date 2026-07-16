@@ -39,7 +39,17 @@ export interface Ressort {
   name: string;
   beschreibung: string;
   farbe: string;
+  hatZeitplan?: boolean;
   leads: UserLite[];
+}
+
+export interface ScheduleEntry {
+  id: number;
+  ressortId: number;
+  floor: string;
+  titel: string;
+  startMin: number; // Minuten seit 16:00
+  endMin: number;
 }
 
 export interface SubRessort {

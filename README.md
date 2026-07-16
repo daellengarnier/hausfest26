@@ -26,6 +26,8 @@ https://hausfest.al-daellen.ch
 - **Login** + erzwungener Passwortwechsel beim ersten Anmelden
 - **Dashboard**: alle Ressorts mit offenen Todos, nächster Sitzung, letzter Aktivität
 - **Ressort-Ansicht**: Sub-Ressorts (auf-/zuklappbar), Todos, eigene Pinnwand
+- **Programm-Zeitplan**: visuelle Timeline 16:00–08:00 mit mehreren Floors,
+  Acts per Uhrzeit einzeichnen (nur bei Ressorts mit aktiviertem Zeitplan)
 - **Todo-Detail**: Status, Zuständige, Frist, Diskussion mit `@Mention`-Autocomplete
 - **Meine Sachen**: mir zugewiesen + @mich erwähnt
 - **Inbox**: Mentions, Zuweisungen, neue Kommentare, Sitzungseinladungen

@@ -8,6 +8,7 @@ import { Avatar, EmptyState, Modal, Spinner } from "@/components/Ui";
 import { TodoRow } from "@/components/TodoRow";
 import { TodoFormModal } from "@/components/TodoFormModal";
 import { CommentThread } from "@/components/CommentThread";
+import { Zeitplan } from "@/components/Zeitplan";
 import { relTime } from "@/lib/uiUtil";
 import type { ProtocolRef, Ressort, SubRessort, Todo } from "@/lib/uiTypes";
 
@@ -22,7 +23,7 @@ export default function RessortPage() {
   const params = useParams<{ id: string }>();
   const ressortId = Number(params.id);
   const [data, setData] = useState<DetailResponse | null>(null);
-  const [tab, setTab] = useState<"todos" | "pinnwand">("todos");
+  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan">("todos");
   const [error, setError] = useState("");
   const [todoModal, setTodoModal] = useState<{ open: boolean; subId: number | null }>({ open: false, subId: null });
   const [subModalOpen, setSubModalOpen] = useState(false);
@@ -66,6 +67,11 @@ export default function RessortPage() {
       </div>
 
       <div className="flex gap-1 rounded-xl bg-slate-200/70 p-1 text-sm font-medium">
+        {ressort.hatZeitplan && (
+          <button className={`flex-1 rounded-lg py-2 ${tab === "zeitplan" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("zeitplan")}>
+            Zeitplan
+          </button>
+        )}
         <button className={`flex-1 rounded-lg py-2 ${tab === "todos" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("todos")}>
           Todos {openTodoCount > 0 && <span className="text-slate-400">({openTodoCount})</span>}
         </button>
@@ -74,7 +80,9 @@ export default function RessortPage() {
         </button>
       </div>
 
-      {tab === "todos" ? (
+      {tab === "zeitplan" ? (
+        <Zeitplan ressortId={ressortId} />
+      ) : tab === "todos" ? (
         <div className="space-y-4">
           <div className="flex gap-2">
             <button className="btn-primary flex-1" onClick={() => setTodoModal({ open: true, subId: null })}>

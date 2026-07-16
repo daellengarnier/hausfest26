@@ -49,6 +49,8 @@ export const ressorts = pgTable("ressorts", {
   beschreibung: text("beschreibung").notNull().default(""),
   farbe: text("farbe").notNull().default("#6366f1"),
   reihenfolge: integer("reihenfolge").notNull().default(0),
+  // Ressorts mit Zeitplan (z. B. Programm) zeigen einen zusätzlichen Timeline-Tab.
+  hatZeitplan: boolean("hatZeitplan").notNull().default(false),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -179,6 +181,20 @@ export const protocols = pgTable("protocols", {
   inhalt: text("inhalt").notNull().default(""),
   aktualisiertVon: integer("aktualisiertVon").references(() => users.id, { onDelete: "set null" }),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Zeitplan-Einträge (Programm-Floors über die Nacht). Zeiten als Minuten seit
+// Startzeit 16:00 (0) bis 08:00 des Folgetags (960) – umgeht Mitternachts-Fallen.
+export const scheduleEntries = pgTable("schedule_entries", {
+  id: serial("id").primaryKey(),
+  ressortId: integer("ressortId")
+    .notNull()
+    .references(() => ressorts.id, { onDelete: "cascade" }),
+  floor: text("floor").notNull().default(""),
+  titel: text("titel").notNull(),
+  startMin: integer("startMin").notNull(),
+  endMin: integer("endMin").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const activityItems = pgTable(

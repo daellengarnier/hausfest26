@@ -15,6 +15,13 @@
       "when": 1780666597901,
       "tag": "0001_drop_seed_users",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784209629420,
+      "tag": "0002_programm_zeitplan",
+      "breakpoints": true
     }
   ]
 }
