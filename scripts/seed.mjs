@@ -44,6 +44,7 @@ try {
         await tx`INSERT INTO sub_ressorts ("ressortId", name, reihenfolge) VALUES (${row.id}, ${sub}, ${sOrder++})`;
       }
       if (r.zeitplan) {
+        // Programm-Floors
         const floors = [
           ["Club", "#6366f1"],
           ["Ambient (EG Nord)", "#06b6d4"],
@@ -52,8 +53,20 @@ try {
         ];
         let fOrder = 1;
         for (const [fname, fcolor] of floors) {
-          await tx`INSERT INTO schedule_floors ("ressortId", name, farbe, reihenfolge) VALUES (${row.id}, ${fname}, ${fcolor}, ${fOrder++})`;
+          await tx`INSERT INTO schedule_floors ("ressortId", board, name, farbe, reihenfolge) VALUES (${row.id}, 'programm', ${fname}, ${fcolor}, ${fOrder++})`;
         }
+        // Bars (eigenes Board) inkl. Öffnungszeiten
+        const bars = [
+          ["Bar im Garten", "#22c55e", 0, 360, ""],
+          ["Bar im Ostblock", "#f97316", 330, 960, "Snacks"],
+        ];
+        let bOrder = 1;
+        for (const [bname, bcolor, bs, be, note] of bars) {
+          await tx`INSERT INTO schedule_floors ("ressortId", board, name, farbe, reihenfolge) VALUES (${row.id}, 'bars', ${bname}, ${bcolor}, ${bOrder++})`;
+          await tx`INSERT INTO schedule_entries ("ressortId", board, floor, titel, "startMin", "endMin") VALUES (${row.id}, 'bars', ${bname}, ${note}, ${bs}, ${be})`;
+        }
+        // Nachtessen als dezentes Zeitfenster im Programm-Board
+        await tx`INSERT INTO schedule_markers ("ressortId", board, titel, "startMin", "endMin", farbe) VALUES (${row.id}, 'programm', 'Nachtessen', 120, 240, '#f59e0b')`;
       }
     }
   });

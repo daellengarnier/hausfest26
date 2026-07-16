@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/apiClient";
 import { Modal, Spinner } from "./Ui";
-import type { ScheduleEntry, ScheduleFloor } from "@/lib/uiTypes";
+import type { BoardKind, ScheduleEntry, ScheduleFloor, ScheduleMarker } from "@/lib/uiTypes";
 
 // Zeitachse: 16:00 (min 0) bis 08:00 des Folgetags (min 960), vertikal nach unten.
 const START_HOUR = 16;
 const SPAN = 960;
 const STEP = 15;
-const PX_PER_MIN = 1.5; // 960 min → 1440 px
+const PX_PER_MIN = 1.5;
 const TIME_W = 50;
 const COL_W = 128;
 const HEADER_H = 44;
@@ -22,25 +22,70 @@ function minToLabel(min: number): string {
 const TIME_OPTIONS = Array.from({ length: SPAN / STEP + 1 }, (_, i) => i * STEP);
 const HOURS = Array.from({ length: SPAN / 60 + 1 }, (_, i) => i * 60);
 
-export function Zeitplan({ ressortId }: { ressortId: number }) {
+interface Labels {
+  colHeader: string; // Spalten-Objekt
+  addCol: string;
+  addEntry: string;
+  entryTitle: string; // Modal-Titel für Eintrag
+  entryNameLabel: string;
+  entryNameRequired: boolean;
+  empty: string;
+}
+const LABELS: Record<"acts" | "bars", Labels> = {
+  acts: {
+    colHeader: "Ort / Floor",
+    addCol: "+ Ort",
+    addEntry: "+ Act",
+    entryTitle: "Act",
+    entryNameLabel: "Act / DJ / Band",
+    entryNameRequired: true,
+    empty: "Noch keine Orte. Leg zuerst einen Ort an, dann Acts.",
+  },
+  bars: {
+    colHeader: "Bar",
+    addCol: "+ Bar",
+    addEntry: "+ Öffnungszeit",
+    entryTitle: "Öffnungszeit",
+    entryNameLabel: "Notiz (optional, z. B. Snacks)",
+    entryNameRequired: false,
+    empty: "Noch keine Bars. Leg zuerst eine Bar an, dann Öffnungszeiten.",
+  },
+};
+
+export function Zeitplan({
+  ressortId,
+  board = "programm",
+  mode = "acts",
+}: {
+  ressortId: number;
+  board?: BoardKind;
+  mode?: "acts" | "bars";
+}) {
+  const L = LABELS[mode];
   const [floors, setFloors] = useState<ScheduleFloor[] | null>(null);
   const [entries, setEntries] = useState<ScheduleEntry[]>([]);
+  const [markers, setMarkers] = useState<ScheduleMarker[]>([]);
   const [actModal, setActModal] = useState<ScheduleEntry | "new" | null>(null);
   const [floorModal, setFloorModal] = useState(false);
+  const [markerModal, setMarkerModal] = useState<ScheduleMarker | "new" | null>(null);
   const [deleteFloor, setDeleteFloor] = useState<ScheduleFloor | null>(null);
 
   const load = () =>
-    api.get<{ floors: ScheduleFloor[]; entries: ScheduleEntry[] }>(`/ressorts/${ressortId}/schedule`).then((d) => {
-      setFloors(d.floors);
-      setEntries(d.entries);
-    });
+    api
+      .get<{ floors: ScheduleFloor[]; entries: ScheduleEntry[]; markers: ScheduleMarker[] }>(
+        `/ressorts/${ressortId}/schedule?board=${board}`,
+      )
+      .then((d) => {
+        setFloors(d.floors);
+        setEntries(d.entries);
+        setMarkers(d.markers ?? []);
+      });
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ressortId]);
+  }, [ressortId, board]);
 
-  // Anzuzeigende Spalten: definierte Floors + evtl. verwaiste Act-Floors (grau).
   const displayFloors = useMemo(() => {
     const list: { name: string; farbe: string; id: number | null }[] = (floors ?? []).map((f) => ({
       name: f.name,
@@ -65,29 +110,30 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-semibold">Zeitplan</h2>
+          <h2 className="font-semibold">{mode === "bars" ? "Öffnungszeiten" : "Zeitplan"}</h2>
           <p className="text-xs text-slate-500">16:00 – 08:00 · nach unten scrollen</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-ghost px-3 py-2 text-sm" onClick={() => setMarkerModal("new")}>
+            + Zeitfenster
+          </button>
           <button className="btn-ghost px-3 py-2 text-sm" onClick={() => setFloorModal(true)}>
-            + Ort
+            {L.addCol}
           </button>
           <button className="btn-primary px-3 py-2 text-sm" onClick={() => setActModal("new")}>
-            + Act
+            {L.addEntry}
           </button>
         </div>
       </div>
 
       {displayFloors.length === 0 ? (
-        <div className="card p-6 text-center text-sm text-slate-500">
-          Noch keine Orte. Leg zuerst einen Ort an (z.&nbsp;B. &bdquo;Club&ldquo;), dann Acts.
-        </div>
+        <div className="card p-6 text-center text-sm text-slate-500">{L.empty}</div>
       ) : (
         <div className="card overflow-auto" style={{ maxHeight: "72vh" }}>
           <div style={{ width: TIME_W + gridW, position: "relative" }}>
-            {/* Kopfzeile mit Floors (sticky oben) */}
+            {/* Kopfzeile (sticky oben) */}
             <div className="sticky top-0 z-20 flex" style={{ height: HEADER_H }}>
               <div className="sticky left-0 z-30 shrink-0 border-b border-r border-slate-200 bg-white" style={{ width: TIME_W }} />
               {displayFloors.map((f) => (
@@ -106,7 +152,7 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
                     <button
                       className="shrink-0 rounded p-0.5 text-slate-300 hover:text-rose-500"
                       onClick={() => setDeleteFloor(floors.find((x) => x.id === f.id) ?? null)}
-                      aria-label="Ort löschen"
+                      aria-label="Löschen"
                     >
                       ✕
                     </button>
@@ -115,7 +161,7 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
               ))}
             </div>
 
-            {/* Körper: Zeit-Gutter + Spalten */}
+            {/* Körper */}
             <div className="flex" style={{ height: SPAN * PX_PER_MIN }}>
               <div className="sticky left-0 z-10 shrink-0 border-r border-slate-200 bg-white" style={{ width: TIME_W }}>
                 {HOURS.map((h) => (
@@ -125,22 +171,49 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
                 ))}
               </div>
               <div className="relative" style={{ width: gridW }}>
+                {/* Stundenlinien */}
                 {HOURS.map((h) => (
-                  <div key={h} className="absolute inset-x-0 border-t border-slate-100" style={{ top: h * PX_PER_MIN }} />
+                  <div key={h} className="pointer-events-none absolute inset-x-0 border-t border-slate-100" style={{ top: h * PX_PER_MIN }} />
                 ))}
+                {/* Spaltentrenner */}
                 {displayFloors.map((_, i) => (
-                  <div key={i} className="absolute bottom-0 top-0 border-l border-slate-100" style={{ left: i * COL_W }} />
+                  <div key={i} className="pointer-events-none absolute bottom-0 top-0 border-l border-slate-100" style={{ left: i * COL_W }} />
                 ))}
+                {/* Zeitfenster-Marker (dezent, volle Breite) */}
+                {markers.map((m) => (
+                  <button
+                    key={`m${m.id}`}
+                    onClick={() => setMarkerModal(m)}
+                    className="absolute inset-x-0 z-0 overflow-hidden text-left"
+                    style={{
+                      top: m.startMin * PX_PER_MIN,
+                      height: Math.max(14, (m.endMin - m.startMin) * PX_PER_MIN),
+                      background: `${m.farbe}1f`,
+                      borderTop: `1px dashed ${m.farbe}80`,
+                      borderBottom: `1px dashed ${m.farbe}80`,
+                    }}
+                    title={`${m.titel} · ${minToLabel(m.startMin)}–${minToLabel(m.endMin)}`}
+                  >
+                    <span
+                      className="sticky left-1 inline-block rounded-md bg-white/85 px-1.5 py-0.5 text-[10px] font-semibold shadow-sm"
+                      style={{ color: m.farbe }}
+                    >
+                      {m.titel} · {minToLabel(m.startMin)}–{minToLabel(m.endMin)}
+                    </span>
+                  </button>
+                ))}
+                {/* Einträge */}
                 {entries.map((e) => {
                   const col = colIndex(e.floor);
                   if (col < 0) return null;
                   const color = displayFloors[col].farbe;
                   const h = (e.endMin - e.startMin) * PX_PER_MIN;
+                  const timeStr = `${minToLabel(e.startMin)}–${minToLabel(e.endMin)}`;
                   return (
                     <button
                       key={e.id}
                       onClick={() => setActModal(e)}
-                      className="absolute overflow-hidden rounded-lg px-1.5 py-1 text-left text-white shadow-sm active:scale-[0.99]"
+                      className="absolute z-10 overflow-hidden rounded-lg px-1.5 py-1 text-left text-white shadow-sm active:scale-[0.99]"
                       style={{
                         left: col * COL_W + 3,
                         width: COL_W - 6,
@@ -148,13 +221,18 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
                         height: Math.max(20, h - 2),
                         background: color,
                       }}
-                      title={`${e.titel} · ${minToLabel(e.startMin)}–${minToLabel(e.endMin)}`}
+                      title={`${e.titel || timeStr} · ${timeStr}`}
                     >
-                      <span className="block truncate text-xs font-semibold leading-tight">{e.titel}</span>
-                      {h > 30 && (
-                        <span className="block truncate text-[10px] leading-tight opacity-90">
-                          {minToLabel(e.startMin)}–{minToLabel(e.endMin)}
-                        </span>
+                      {mode === "bars" ? (
+                        <>
+                          <span className="block truncate text-xs font-semibold leading-tight">{timeStr}</span>
+                          {e.titel && h > 30 && <span className="block truncate text-[10px] leading-tight opacity-90">{e.titel}</span>}
+                        </>
+                      ) : (
+                        <>
+                          <span className="block truncate text-xs font-semibold leading-tight">{e.titel}</span>
+                          {h > 30 && <span className="block truncate text-[10px] leading-tight opacity-90">{timeStr}</span>}
+                        </>
                       )}
                     </button>
                   );
@@ -166,8 +244,10 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
       )}
 
       {actModal && (
-        <ActModal
+        <EntryModal
           ressortId={ressortId}
+          board={board}
+          labels={L}
           entry={actModal === "new" ? null : actModal}
           floors={displayFloors.map((f) => f.name)}
           onClose={() => setActModal(null)}
@@ -180,9 +260,23 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
       {floorModal && (
         <FloorModal
           ressortId={ressortId}
+          board={board}
+          labels={L}
           onClose={() => setFloorModal(false)}
           onSaved={() => {
             setFloorModal(false);
+            load();
+          }}
+        />
+      )}
+      {markerModal && (
+        <MarkerModal
+          ressortId={ressortId}
+          board={board}
+          marker={markerModal === "new" ? null : markerModal}
+          onClose={() => setMarkerModal(null)}
+          onSaved={() => {
+            setMarkerModal(null);
             load();
           }}
         />
@@ -191,7 +285,7 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
         <Modal
           open
           onClose={() => setDeleteFloor(null)}
-          title={`Ort „${deleteFloor.name}" löschen?`}
+          title={`„${deleteFloor.name}" löschen?`}
           footer={
             <div className="flex gap-2">
               <button className="btn-ghost flex-1" onClick={() => setDeleteFloor(null)}>
@@ -210,14 +304,26 @@ export function Zeitplan({ ressortId }: { ressortId: number }) {
             </div>
           }
         >
-          <p className="text-sm text-slate-600">Alle Acts auf diesem Ort werden ebenfalls entfernt.</p>
+          <p className="text-sm text-slate-600">Alle zugehörigen Einträge werden ebenfalls entfernt.</p>
         </Modal>
       )}
     </div>
   );
 }
 
-function FloorModal({ ressortId, onClose, onSaved }: { ressortId: number; onClose: () => void; onSaved: () => void }) {
+function FloorModal({
+  ressortId,
+  board,
+  labels,
+  onClose,
+  onSaved,
+}: {
+  ressortId: number;
+  board: BoardKind;
+  labels: Labels;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -227,7 +333,7 @@ function FloorModal({ ressortId, onClose, onSaved }: { ressortId: number; onClos
     setSaving(true);
     setError("");
     try {
-      await api.post(`/ressorts/${ressortId}/schedule/floors`, { name: name.trim() });
+      await api.post(`/ressorts/${ressortId}/schedule/floors`, { name: name.trim(), board });
       onSaved();
     } catch (e) {
       setError((e as Error).message);
@@ -240,7 +346,7 @@ function FloorModal({ ressortId, onClose, onSaved }: { ressortId: number; onClos
     <Modal
       open
       onClose={onClose}
-      title="Ort / Floor hinzufügen"
+      title={`${labels.colHeader} hinzufügen`}
       footer={
         <div className="flex gap-2">
           <button className="btn-ghost flex-1" onClick={onClose}>
@@ -254,7 +360,7 @@ function FloorModal({ ressortId, onClose, onSaved }: { ressortId: number; onClos
     >
       <div className="space-y-2">
         <label className="label">Name</label>
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="z. B. Pyramide, Treppenhaus" />
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder={board === "bars" ? "z. B. Bar Dreiecksbar" : "z. B. Pyramide"} />
         <p className="text-xs text-slate-400">Farbe wird automatisch vergeben.</p>
         {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
       </div>
@@ -262,14 +368,18 @@ function FloorModal({ ressortId, onClose, onSaved }: { ressortId: number; onClos
   );
 }
 
-function ActModal({
+function EntryModal({
   ressortId,
+  board,
+  labels,
   entry,
   floors,
   onClose,
   onSaved,
 }: {
   ressortId: number;
+  board: BoardKind;
+  labels: Labels;
   entry: ScheduleEntry | null;
   floors: string[];
   onClose: () => void;
@@ -278,18 +388,18 @@ function ActModal({
   const editing = !!entry;
   const [floor, setFloor] = useState(entry?.floor ?? floors[0] ?? "");
   const [titel, setTitel] = useState(entry?.titel ?? "");
-  const [startMin, setStartMin] = useState(entry?.startMin ?? 4 * 60); // 20:00
-  const [endMin, setEndMin] = useState(entry?.endMin ?? 5 * 60); // 21:00
+  const [startMin, setStartMin] = useState(entry?.startMin ?? (board === "bars" ? 0 : 4 * 60));
+  const [endMin, setEndMin] = useState(entry?.endMin ?? (board === "bars" ? 6 * 60 : 5 * 60));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const save = async () => {
-    if (!floor) return setError("Bitte zuerst einen Ort anlegen");
-    if (!titel.trim()) return setError("Act/Name erforderlich");
+    if (!floor) return setError("Bitte zuerst einen Eintrag/Ort anlegen");
+    if (labels.entryNameRequired && !titel.trim()) return setError(`${labels.entryNameLabel} erforderlich`);
     if (endMin <= startMin) return setError("Ende muss nach Start liegen");
     setSaving(true);
     setError("");
-    const payload = { floor, titel: titel.trim(), startMin, endMin };
+    const payload = { board, floor, titel: titel.trim(), startMin, endMin };
     try {
       if (editing) await api.patch(`/ressorts/${ressortId}/schedule/${entry!.id}`, payload);
       else await api.post(`/ressorts/${ressortId}/schedule`, payload);
@@ -310,7 +420,7 @@ function ActModal({
     <Modal
       open
       onClose={onClose}
-      title={editing ? "Act bearbeiten" : "Neuer Act"}
+      title={editing ? `${labels.entryTitle} bearbeiten` : `Neue:r ${labels.entryTitle}`}
       footer={
         <div className="flex gap-2">
           {editing && (
@@ -329,9 +439,9 @@ function ActModal({
     >
       <div className="space-y-4">
         <div>
-          <label className="label">Ort / Floor</label>
+          <label className="label">{labels.colHeader}</label>
           <select className="input" value={floor} onChange={(e) => setFloor(e.target.value)}>
-            {floors.length === 0 && <option value="">— zuerst Ort anlegen —</option>}
+            {floors.length === 0 && <option value="">— zuerst anlegen —</option>}
             {floors.map((f) => (
               <option key={f} value={f}>
                 {f}
@@ -340,8 +450,105 @@ function ActModal({
           </select>
         </div>
         <div>
-          <label className="label">Act / DJ / Band</label>
-          <input className="input" value={titel} onChange={(e) => setTitel(e.target.value)} autoFocus placeholder="Name" />
+          <label className="label">{labels.entryNameLabel}</label>
+          <input className="input" value={titel} onChange={(e) => setTitel(e.target.value)} autoFocus placeholder={labels.entryNameRequired ? "Name" : "optional"} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Von</label>
+            <select className="input" value={startMin} onChange={(e) => setStartMin(Number(e.target.value))}>
+              {TIME_OPTIONS.map((m) => (
+                <option key={m} value={m}>
+                  {minToLabel(m)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Bis</label>
+            <select className="input" value={endMin} onChange={(e) => setEndMin(Number(e.target.value))}>
+              {TIME_OPTIONS.map((m) => (
+                <option key={m} value={m}>
+                  {minToLabel(m)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
+      </div>
+    </Modal>
+  );
+}
+
+function MarkerModal({
+  ressortId,
+  board,
+  marker,
+  onClose,
+  onSaved,
+}: {
+  ressortId: number;
+  board: BoardKind;
+  marker: ScheduleMarker | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const editing = !!marker;
+  const [titel, setTitel] = useState(marker?.titel ?? "");
+  const [startMin, setStartMin] = useState(marker?.startMin ?? 2 * 60); // 18:00
+  const [endMin, setEndMin] = useState(marker?.endMin ?? 4 * 60); // 20:00
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const save = async () => {
+    if (!titel.trim()) return setError("Bezeichnung erforderlich");
+    if (endMin <= startMin) return setError("Ende muss nach Start liegen");
+    setSaving(true);
+    setError("");
+    const payload = { board, titel: titel.trim(), startMin, endMin };
+    try {
+      if (editing) await api.patch(`/ressorts/${ressortId}/schedule/markers/${marker!.id}`, payload);
+      else await api.post(`/ressorts/${ressortId}/schedule/markers`, payload);
+      onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    await api.del(`/ressorts/${ressortId}/schedule/markers/${marker!.id}`);
+    onSaved();
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={editing ? "Zeitfenster bearbeiten" : "Neues Zeitfenster"}
+      footer={
+        <div className="flex gap-2">
+          {editing && (
+            <button className="btn-danger" onClick={remove}>
+              🗑️
+            </button>
+          )}
+          <button className="btn-ghost flex-1" onClick={onClose}>
+            Abbrechen
+          </button>
+          <button className="btn-primary flex-1" onClick={save} disabled={saving}>
+            Speichern
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="label">Bezeichnung</label>
+          <input className="input" value={titel} onChange={(e) => setTitel(e.target.value)} autoFocus placeholder="z. B. Nachtessen" />
+          <p className="mt-1 text-xs text-slate-400">Wird als dezentes Band über alle Spalten angezeigt.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>

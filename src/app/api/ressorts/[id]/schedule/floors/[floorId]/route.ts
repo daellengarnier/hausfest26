@@ -15,7 +15,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     .where(and(eq(scheduleFloors.id, Number(floorId)), eq(scheduleFloors.ressortId, ressortId)))
     .limit(1);
   const floor = rows[0];
-  if (!floor) return Response.json({ error: "Ort nicht gefunden" }, { status: 404 });
+  if (!floor) return Response.json({ error: "Nicht gefunden" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
   const patch: Partial<typeof scheduleFloors.$inferInsert> = {};
@@ -23,12 +23,18 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   if (body?.farbe !== undefined) patch.farbe = String(body.farbe);
   if (body?.reihenfolge !== undefined) patch.reihenfolge = Number(body.reihenfolge);
 
-  // Bei Umbenennung die zugehörigen Acts mitziehen (Acts referenzieren per Name).
+  // Bei Umbenennung die zugehörigen Einträge (gleiches Board) mitziehen.
   if (patch.name && patch.name !== floor.name) {
     await db
       .update(scheduleEntries)
       .set({ floor: patch.name })
-      .where(and(eq(scheduleEntries.ressortId, ressortId), eq(scheduleEntries.floor, floor.name)));
+      .where(
+        and(
+          eq(scheduleEntries.ressortId, ressortId),
+          eq(scheduleEntries.board, floor.board),
+          eq(scheduleEntries.floor, floor.name),
+        ),
+      );
   }
   if (Object.keys(patch).length > 0) await db.update(scheduleFloors).set(patch).where(eq(scheduleFloors.id, floor.id));
   return Response.json({ ok: true });
@@ -41,16 +47,21 @@ export async function DELETE(_request: Request, ctx: { params: Promise<{ id: str
   const ressortId = Number(id);
   const db = getDb();
   const rows = await db
-    .select({ name: scheduleFloors.name })
+    .select({ name: scheduleFloors.name, board: scheduleFloors.board })
     .from(scheduleFloors)
     .where(and(eq(scheduleFloors.id, Number(floorId)), eq(scheduleFloors.ressortId, ressortId)))
     .limit(1);
-  if (!rows[0]) return Response.json({ error: "Ort nicht gefunden" }, { status: 404 });
+  if (!rows[0]) return Response.json({ error: "Nicht gefunden" }, { status: 404 });
 
-  // Acts dieses Orts mitlöschen (referenzieren per Name).
   await db
     .delete(scheduleEntries)
-    .where(and(eq(scheduleEntries.ressortId, ressortId), eq(scheduleEntries.floor, rows[0].name)));
+    .where(
+      and(
+        eq(scheduleEntries.ressortId, ressortId),
+        eq(scheduleEntries.board, rows[0].board),
+        eq(scheduleEntries.floor, rows[0].name),
+      ),
+    );
   await db.delete(scheduleFloors).where(eq(scheduleFloors.id, Number(floorId)));
   return Response.json({ ok: true });
 }

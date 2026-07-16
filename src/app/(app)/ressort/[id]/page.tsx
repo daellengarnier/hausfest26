@@ -23,7 +23,7 @@ export default function RessortPage() {
   const params = useParams<{ id: string }>();
   const ressortId = Number(params.id);
   const [data, setData] = useState<DetailResponse | null>(null);
-  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | null>(null);
+  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | "bars" | null>(null);
   const [error, setError] = useState("");
   const [todoModal, setTodoModal] = useState<{ open: boolean; subId: number | null }>({ open: false, subId: null });
   const [subModalOpen, setSubModalOpen] = useState(false);
@@ -68,22 +68,29 @@ export default function RessortPage() {
         </div>
       </div>
 
-      <div className="flex gap-1 rounded-xl bg-slate-200/70 p-1 text-sm font-medium">
+      <div className="flex gap-1 overflow-x-auto rounded-xl bg-slate-200/70 p-1 text-sm font-medium">
         {ressort.hatZeitplan && (
-          <button className={`flex-1 rounded-lg py-2 ${activeTab === "zeitplan" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("zeitplan")}>
-            Zeitplan
-          </button>
+          <>
+            <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "zeitplan" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("zeitplan")}>
+              Zeitplan
+            </button>
+            <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "bars" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("bars")}>
+              Bars
+            </button>
+          </>
         )}
-        <button className={`flex-1 rounded-lg py-2 ${activeTab === "todos" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("todos")}>
+        <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "todos" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("todos")}>
           Todos {openTodoCount > 0 && <span className="text-slate-400">({openTodoCount})</span>}
         </button>
-        <button className={`flex-1 rounded-lg py-2 ${activeTab === "pinnwand" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("pinnwand")}>
+        <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "pinnwand" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("pinnwand")}>
           Pinnwand
         </button>
       </div>
 
       {activeTab === "zeitplan" ? (
-        <Zeitplan ressortId={ressortId} />
+        <Zeitplan ressortId={ressortId} board="programm" mode="acts" />
+      ) : activeTab === "bars" ? (
+        <Zeitplan ressortId={ressortId} board="bars" mode="bars" />
       ) : activeTab === "todos" ? (
         <div className="space-y-4">
           <div className="flex gap-2">

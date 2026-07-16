@@ -183,7 +183,11 @@ export const protocols = pgTable("protocols", {
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Floors/Orte eines Zeitplans (Spalten). Vordefiniert + manuell erweiterbar,
+// Ein Zeitplan-Ressort kann mehrere „Boards" haben – dieselbe Timeline-Optik,
+// aber getrennte Inhalte: 'programm' (Acts) und 'bars' (Öffnungszeiten).
+export type BoardKind = "programm" | "bars";
+
+// Spalten eines Boards (Floors bzw. Bars). Vordefiniert + manuell erweiterbar,
 // jeweils mit eigener Farbe und Sortier-Reihenfolge.
 export const scheduleFloors = pgTable(
   "schedule_floors",
@@ -192,25 +196,42 @@ export const scheduleFloors = pgTable(
     ressortId: integer("ressortId")
       .notNull()
       .references(() => ressorts.id, { onDelete: "cascade" }),
+    board: text("board").$type<BoardKind>().notNull().default("programm"),
     name: text("name").notNull(),
     farbe: text("farbe").notNull().default("#6366f1"),
     reihenfolge: integer("reihenfolge").notNull().default(0),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("uq_floor_ressort_name").on(t.ressortId, t.name)],
+  (t) => [uniqueIndex("uq_floor_ressort_board_name").on(t.ressortId, t.board, t.name)],
 );
 
-// Zeitplan-Einträge (Acts pro Floor über die Nacht). Zeiten als Minuten seit
+// Einträge eines Boards (Acts bzw. Öffnungszeiten). Zeiten als Minuten seit
 // Startzeit 16:00 (0) bis 08:00 des Folgetags (960) – umgeht Mitternachts-Fallen.
 export const scheduleEntries = pgTable("schedule_entries", {
   id: serial("id").primaryKey(),
   ressortId: integer("ressortId")
     .notNull()
     .references(() => ressorts.id, { onDelete: "cascade" }),
+  board: text("board").$type<BoardKind>().notNull().default("programm"),
   floor: text("floor").notNull().default(""),
-  titel: text("titel").notNull(),
+  titel: text("titel").notNull().default(""),
   startMin: integer("startMin").notNull(),
   endMin: integer("endMin").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Zeitfenster-Marker: dezentes Band über die volle Breite (alle Floors),
+// z. B. „Nachtessen 18:00–20:00". Rein informativ, schwächer als Einträge.
+export const scheduleMarkers = pgTable("schedule_markers", {
+  id: serial("id").primaryKey(),
+  ressortId: integer("ressortId")
+    .notNull()
+    .references(() => ressorts.id, { onDelete: "cascade" }),
+  board: text("board").$type<BoardKind>().notNull().default("programm"),
+  titel: text("titel").notNull().default(""),
+  startMin: integer("startMin").notNull(),
+  endMin: integer("endMin").notNull(),
+  farbe: text("farbe").notNull().default("#f59e0b"),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 

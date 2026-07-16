@@ -44,9 +44,12 @@ export interface Ressort {
   leads: UserLite[];
 }
 
+export type BoardKind = "programm" | "bars";
+
 export interface ScheduleFloor {
   id: number;
   ressortId: number;
+  board?: BoardKind;
   name: string;
   farbe: string;
   reihenfolge: number;
@@ -55,10 +58,21 @@ export interface ScheduleFloor {
 export interface ScheduleEntry {
   id: number;
   ressortId: number;
+  board?: BoardKind;
   floor: string;
   titel: string;
   startMin: number; // Minuten seit 16:00
   endMin: number;
+}
+
+export interface ScheduleMarker {
+  id: number;
+  ressortId: number;
+  board?: BoardKind;
+  titel: string;
+  startMin: number;
+  endMin: number;
+  farbe: string;
 }
 
 export interface SubRessort {
