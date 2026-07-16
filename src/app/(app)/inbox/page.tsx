@@ -4,14 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/apiClient";
 import { Avatar, EmptyState, Spinner } from "@/components/Ui";
+import { Icon, type IconName } from "@/components/Icon";
 import { relTime } from "@/lib/uiUtil";
 import type { ActivityItem } from "@/lib/uiTypes";
 
-const ICON: Record<string, string> = {
-  mention: "💬",
-  zuweisung: "✅",
-  neuer_kommentar: "🗨️",
-  sitzung: "📅",
+const ICON: Record<string, IconName> = {
+  mention: "chat",
+  zuweisung: "check",
+  neuer_kommentar: "chat",
+  sitzung: "calendar",
 };
 
 function targetPath(it: ActivityItem): string {
@@ -50,7 +51,7 @@ export default function InboxPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-white">Inbox</h1>
+        <h1 className="text-2xl font-extrabold text-ink">Inbox</h1>
         {unread > 0 && (
           <button className="btn-ghost px-3 py-1.5 text-sm" onClick={markAll}>
             Alle gelesen
@@ -74,13 +75,17 @@ export default function InboxPage() {
                 {it.actorName ? (
                   <Avatar name={it.actorName} color={it.actorColor ?? "#94a3b8"} size={36} />
                 ) : (
-                  <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-lg">{ICON[it.typ]}</span>
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-stone-100 text-stone-500">
+                    <Icon name={ICON[it.typ] ?? "bell"} size={18} />
+                  </span>
                 )}
-                <span className="absolute -bottom-1 -right-1 text-sm">{ICON[it.typ]}</span>
+                <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-accent text-white ring-2 ring-white">
+                  <Icon name={ICON[it.typ] ?? "bell"} size={10} strokeWidth={2.2} />
+                </span>
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm text-slate-700">{it.text}</span>
-                <span className="text-xs text-slate-400">{relTime(it.createdAt)}</span>
+                <span className="block text-sm text-stone-700">{it.text}</span>
+                <span className="text-xs text-stone-400">{relTime(it.createdAt)}</span>
               </span>
               {!it.gelesen && <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-accent" />}
             </button>

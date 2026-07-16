@@ -6,11 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import { api } from "@/lib/apiClient";
 import { Avatar, Spinner } from "@/components/Ui";
+import { Icon, type IconName } from "@/components/Icon";
 
-const TABS = [
-  { href: "/", label: "Übersicht", icon: "🏠", exact: true },
-  { href: "/mine", label: "Meine Sachen", icon: "✅", exact: false },
-  { href: "/inbox", label: "Inbox", icon: "🔔", exact: false, badge: true },
+const TABS: { href: string; label: string; icon: IconName; exact: boolean; badge?: boolean }[] = [
+  { href: "/", label: "Übersicht", icon: "home", exact: true },
+  { href: "/mine", label: "Meine Sachen", icon: "tasks", exact: false },
+  { href: "/inbox", label: "Inbox", icon: "bell", exact: false, badge: true },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -21,14 +22,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Auth-Guard.
   useEffect(() => {
     if (loading) return;
     if (!user) router.replace("/login");
     else if (user.mustChangePassword) router.replace("/passwort?forced=1");
   }, [loading, user, router]);
 
-  // Inbox-Badge per Polling (bewusst kein WebSocket im MVP).
   useEffect(() => {
     if (!user) return;
     let active = true;
@@ -73,12 +72,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col">
       <header className="pt-safe glass sticky top-0 z-30 border-b">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-4 py-2.5">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="brand-gradient bubble-glow grid h-9 w-9 place-items-center rounded-full">
-              <span className="h-3.5 w-3.5 rounded-full border-[2.5px] border-white" />
+            <span className="brand-gradient grid h-9 w-9 place-items-center rounded-2xl text-white shadow-[var(--shadow-pop)]">
+              <Icon name="leaf" size={18} />
             </span>
-            <span className="text-lg font-extrabold tracking-tight text-white">
+            <span className="text-lg font-extrabold tracking-tight text-ink">
               Hausfest <span className="brand-text">26</span>
             </span>
           </Link>
@@ -87,40 +86,22 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <Avatar name={user.name} color={user.avatarColor} size={34} />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-slate-200">
-                <div className="border-b border-slate-100 px-4 py-2">
-                  <p className="font-medium">{user.name}</p>
-                  <p className="text-xs text-slate-500">{user.email}</p>
+              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl bg-white py-1 shadow-lg ring-1 ring-stone-200">
+                <div className="border-b border-stone-100 px-4 py-2">
+                  <p className="font-semibold">{user.name}</p>
+                  <p className="text-xs text-stone-500">{user.email}</p>
                   {user.rolle === "admin" && <span className="chip mt-1 bg-accent/10 text-accent-dark">Admin</span>}
                 </div>
                 {user.rolle === "admin" && (
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      router.push("/admin");
-                    }}
-                    className="block w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50"
-                  >
-                    ⚙️ Administration
+                  <button onClick={() => { setMenuOpen(false); router.push("/admin"); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
+                    <Icon name="gear" size={17} className="text-stone-500" /> Administration
                   </button>
                 )}
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    router.push("/passwort");
-                  }}
-                  className="block w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50"
-                >
-                  🔑 Passwort ändern
+                <button onClick={() => { setMenuOpen(false); router.push("/passwort"); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
+                  <Icon name="key" size={17} className="text-stone-500" /> Passwort ändern
                 </button>
-                <button
-                  onClick={async () => {
-                    await logout();
-                    router.replace("/login");
-                  }}
-                  className="block w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
-                >
-                  🚪 Abmelden
+                <button onClick={async () => { await logout(); router.replace("/login"); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50">
+                  <Icon name="logout" size={17} /> Abmelden
                 </button>
               </div>
             )}
@@ -128,31 +109,23 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 pb-28">{children}</main>
+      <main className="flex-1 px-4 py-4 pb-24">{children}</main>
 
       <nav className="pb-safe glass fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl border-t">
-        <div className="grid grid-cols-3 px-1 pt-1">
+        <div className="grid grid-cols-3">
           {TABS.map((t) => {
             const isActive = t.exact ? pathname === t.href : pathname.startsWith(t.href);
             return (
-              <Link
-                key={t.href}
-                href={t.href}
-                className="relative flex flex-col items-center gap-1 py-1.5 text-[11px] font-semibold"
-              >
-                <span
-                  className={`relative grid h-8 w-16 place-items-center rounded-full text-xl leading-none transition-all duration-200 ${
-                    isActive ? "bg-white/15 text-white" : "text-white/50"
-                  }`}
-                >
-                  {t.icon}
+              <Link key={t.href} href={t.href} className="relative flex flex-col items-center gap-0.5 py-1.5 text-[11px] font-semibold">
+                <span className={`relative grid h-7 w-14 place-items-center rounded-full transition-colors ${isActive ? "bg-accent/10 text-accent" : "text-stone-400"}`}>
+                  <Icon name={t.icon} size={21} />
                   {t.badge && unread > 0 && (
-                    <span className="absolute right-2 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-newt px-1 text-[10px] font-bold text-white ring-2 ring-[#0a1663]">
+                    <span className="absolute right-2.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white ring-2 ring-[#f3eee1]">
                       {unread > 99 ? "99+" : unread}
                     </span>
                   )}
                 </span>
-                <span className={isActive ? "text-white" : "text-white/60"}>{t.label}</span>
+                <span className={isActive ? "text-accent-dark" : "text-stone-500"}>{t.label}</span>
               </Link>
             );
           })}

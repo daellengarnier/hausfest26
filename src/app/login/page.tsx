@@ -33,7 +33,7 @@ export default function LoginPage() {
         <div className="mb-8 text-center text-white">
           <div className="mx-auto mb-4 grid h-[68px] w-[68px] place-items-center rounded-[22px] bg-white/10 shadow-2xl ring-1 ring-white/25 backdrop-blur">
             <span className="grid h-10 w-10 place-items-center rounded-full border-[3px] border-white">
-              <span className="h-3 w-3 rounded-full bg-rose-400" />
+              <span className="h-3 w-3 rounded-full bg-terra-light" />
             </span>
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight">Hausfest 26</h1>

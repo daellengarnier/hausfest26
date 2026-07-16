@@ -12,13 +12,16 @@ export const metadata: Metadata = {
     title: "Hausfest 26",
   },
   icons: {
-    icon: "/favicon-64.png",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-64.png", sizes: "64x64", type: "image/png" },
+    ],
     apple: "/apple-touch-icon.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6d28d9",
+  themeColor: "#35603c",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

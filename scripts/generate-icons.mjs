@@ -1,4 +1,5 @@
-// Abhängigkeitsfreier PNG-Generator für die PWA-Icons (Ring + Punkt auf Indigo).
+// Abhängigkeitsfreier PNG-Generator für die App-Icons: „HF"-Monogramm auf
+// grünem Grund (warmes, naturnahes Branding). Buchstaben aus Rechtecken.
 import zlib from "node:zlib";
 import fs from "node:fs";
 import path from "node:path";
@@ -8,10 +9,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(__dirname, "../public");
 fs.mkdirSync(OUT, { recursive: true });
 
-const ACCENT = [99, 102, 241];
-const ACCENT_DARK = [67, 56, 202];
-const LIGHT = [241, 245, 249];
-const PINK = [236, 72, 153];
+const GREEN_TOP = [90, 154, 99]; // #5a9a63
+const GREEN_BOT = [53, 96, 60]; // #35603c
+const CREAM = [243, 238, 225]; // #f3eee1
 
 function crc32(buf) {
   let c = ~0;
@@ -29,17 +29,7 @@ function chunk(type, data) {
   crc.writeUInt32BE(crc32(body), 0);
   return Buffer.concat([len, body, crc]);
 }
-function encodePNG(size, draw) {
-  const px = Buffer.alloc(size * size * 4);
-  for (let y = 0; y < size; y++)
-    for (let x = 0; x < size; x++) {
-      const [r, g, b, a] = draw(x, y);
-      const i = (y * size + x) * 4;
-      px[i] = r;
-      px[i + 1] = g;
-      px[i + 2] = b;
-      px[i + 3] = a;
-    }
+function encodePNG(size, px) {
   const raw = Buffer.alloc(size * (size * 4 + 1));
   for (let y = 0; y < size; y++) {
     raw[y * (size * 4 + 1)] = 0;
@@ -56,30 +46,56 @@ function encodePNG(size, draw) {
 const lerp = (a, b, t) => [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)];
 
 function makeIcon(size, { maskable = false } = {}) {
+  const px = Buffer.alloc(size * size * 4);
   const c = size / 2;
-  const ringOuter = size * (maskable ? 0.3 : 0.34);
-  const ringInner = size * (maskable ? 0.2 : 0.23);
-  const dotR = size * 0.075;
   const corner = size * 0.22;
-  return encodePNG(size, (x, y) => {
-    const dx = x - c,
-      dy = y - c;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const t = (x + y) / (2 * size);
-    let [r, g, b] = lerp(ACCENT, ACCENT_DARK, t);
-    let a = 255;
-    if (!maskable) {
-      const rx = Math.max(0, Math.abs(dx) - (c - corner));
-      const ry = Math.max(0, Math.abs(dy) - (c - corner));
-      if (Math.sqrt(rx * rx + ry * ry) > corner) a = 0;
+  const set = (x, y, rgb) => {
+    if (x < 0 || y < 0 || x >= size || y >= size) return;
+    const i = (y * size + x) * 4;
+    px[i] = rgb[0];
+    px[i + 1] = rgb[1];
+    px[i + 2] = rgb[2];
+    px[i + 3] = 255;
+  };
+  // Hintergrund (Verlauf) + abgerundete Ecken.
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      let a = 255;
+      if (!maskable) {
+        const dx = Math.max(0, Math.abs(x - c) - (c - corner));
+        const dy = Math.max(0, Math.abs(y - c) - (c - corner));
+        if (Math.sqrt(dx * dx + dy * dy) > corner) a = 0;
+      }
+      const rgb = lerp(GREEN_TOP, GREEN_BOT, y / size);
+      const i = (y * size + x) * 4;
+      px[i] = rgb[0];
+      px[i + 1] = rgb[1];
+      px[i + 2] = rgb[2];
+      px[i + 3] = a;
     }
-    if (dist <= ringOuter && dist >= ringInner) [r, g, b] = LIGHT;
-    const pdx = x - c,
-      pdy = y - (c - ringOuter * 0.92);
-    if (Math.sqrt(pdx * pdx + pdy * pdy) <= dotR) [r, g, b] = PINK;
-    if (dist <= dotR * 0.8) [r, g, b] = LIGHT;
-    return [r, g, b, a];
-  });
+  }
+  // „HF"-Monogramm aus Rechtecken.
+  const rect = (rx, ry, rw, rh) => {
+    for (let y = Math.round(ry); y < Math.round(ry + rh); y++) for (let x = Math.round(rx); x < Math.round(rx + rw); x++) set(x, y, CREAM);
+  };
+  const Lh = size * 0.42;
+  const Lw = size * 0.24;
+  const t = Math.max(2, size * 0.062);
+  const gap = size * 0.08;
+  const totalW = 2 * Lw + gap;
+  const x0 = (size - totalW) / 2;
+  const y0 = (size - Lh) / 2;
+  // H
+  rect(x0, y0, t, Lh);
+  rect(x0 + Lw - t, y0, t, Lh);
+  rect(x0, y0 + (Lh - t) / 2, Lw, t);
+  // F
+  const xF = x0 + Lw + gap;
+  rect(xF, y0, t, Lh);
+  rect(xF, y0, Lw, t);
+  rect(xF, y0 + (Lh - t) / 2, Lw * 0.82, t);
+
+  return encodePNG(size, px);
 }
 
 for (const [name, size, opts] of [

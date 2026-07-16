@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/apiClient";
 import { Avatar, Modal, Spinner } from "@/components/Ui";
 import type { Rolle } from "@/lib/uiTypes";
+import { Icon } from "@/components/Icon";
 
 interface AdminUser {
   id: number;
@@ -31,7 +32,7 @@ export default function AdminPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-white">Administration</h1>
+        <h1 className="text-2xl font-extrabold text-ink">Administration</h1>
         <Link href="/" className="text-sm text-slate-400">
           ← zurück
         </Link>
@@ -222,7 +223,7 @@ function RessortsAdmin() {
               <p className="truncate font-medium">{r.name}</p>
               <p className="truncate text-xs text-slate-500">{r.leads.map((l) => l.name).join(", ") || "kein Lead"}</p>
             </div>
-            <span className="text-slate-300">✏️</span>
+            <Icon name="pencil" size={16} className="text-stone-300" />
           </button>
         ))}
       </div>

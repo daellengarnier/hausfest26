@@ -9,6 +9,7 @@ import { CommentThread } from "@/components/CommentThread";
 import { TodoFormModal } from "@/components/TodoFormModal";
 import { STATUS_CLASSES, STATUS_LABEL, formatDateLong, isOverdue } from "@/lib/uiUtil";
 import type { SubRessort, Todo, TodoStatus } from "@/lib/uiTypes";
+import { Icon } from "@/components/Icon";
 
 const STATUS: TodoStatus[] = ["offen", "in_arbeit", "erledigt"];
 
@@ -108,10 +109,10 @@ export default function TodoPage() {
 
         <div className="mt-4 flex gap-2">
           <button className="btn-ghost flex-1" onClick={() => setEditOpen(true)}>
-            ✏️ Bearbeiten
+            <Icon name="pencil" size={16} /> Bearbeiten
           </button>
-          <button className="btn-danger" onClick={() => setConfirmDel(true)}>
-            🗑️
+          <button className="btn-danger" onClick={() => setConfirmDel(true)} aria-label="Löschen">
+            <Icon name="trash" size={17} />
           </button>
         </div>
       </div>

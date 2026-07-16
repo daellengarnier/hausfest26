@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/apiClient";
 import { Modal, Spinner } from "./Ui";
 import type { BoardKind, ScheduleEntry, ScheduleFloor, ScheduleMarker } from "@/lib/uiTypes";
+import { Icon } from "@/components/Icon";
 
 // Zeitachse: 16:00 (min 0) bis 08:00 des Folgetags (min 960), vertikal nach unten.
 const START_HOUR = 16;
@@ -154,7 +155,7 @@ export function Zeitplan({
                       onClick={() => setDeleteFloor(floors.find((x) => x.id === f.id) ?? null)}
                       aria-label="Löschen"
                     >
-                      ✕
+                      <Icon name="close" size={14} />
                     </button>
                   )}
                 </div>
@@ -424,8 +425,8 @@ function EntryModal({
       footer={
         <div className="flex gap-2">
           {editing && (
-            <button className="btn-danger" onClick={remove}>
-              🗑️
+            <button className="btn-danger" onClick={remove} aria-label="Löschen">
+              <Icon name="trash" size={17} />
             </button>
           )}
           <button className="btn-ghost flex-1" onClick={onClose}>
@@ -531,8 +532,8 @@ function MarkerModal({
       footer={
         <div className="flex gap-2">
           {editing && (
-            <button className="btn-danger" onClick={remove}>
-              🗑️
+            <button className="btn-danger" onClick={remove} aria-label="Löschen">
+              <Icon name="trash" size={17} />
             </button>
           )}
           <button className="btn-ghost flex-1" onClick={onClose}>

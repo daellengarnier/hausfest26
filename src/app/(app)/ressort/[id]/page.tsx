@@ -11,6 +11,7 @@ import { CommentThread } from "@/components/CommentThread";
 import { Zeitplan } from "@/components/Zeitplan";
 import { relTime } from "@/lib/uiUtil";
 import type { ProtocolRef, Ressort, SubRessort, Todo } from "@/lib/uiTypes";
+import { Icon } from "@/components/Icon";
 
 interface DetailResponse {
   ressort: Ressort;
@@ -151,11 +152,11 @@ export default function RessortPage() {
 
           {protocols.length > 0 && (
             <div>
-              <h3 className="mb-2 px-1 text-sm font-semibold text-white/70">Protokolle</h3>
+              <h3 className="mb-2 px-1 text-sm font-semibold text-stone-500">Protokolle</h3>
               <div className="card divide-y divide-slate-100 overflow-hidden">
                 {protocols.map((p) => (
                   <Link key={p.id} href={`/meetings/${p.meetingId}`} className="flex items-center justify-between px-4 py-3 active:bg-slate-50">
-                    <span className="flex items-center gap-2 text-sm">📝 {p.titel}</span>
+                    <span className="flex items-center gap-2 text-sm"><Icon name="pencil" size={15} className="text-stone-400" /> {p.titel}</span>
                     <span className="text-xs text-slate-400">{relTime(p.updatedAt)}</span>
                   </Link>
                 ))}

@@ -5,6 +5,7 @@ import { api } from "@/lib/apiClient";
 import { useUsers } from "@/lib/useUsers";
 import { useAuth } from "./AuthContext";
 import { Avatar, EmptyState, MentionText, Spinner } from "./Ui";
+import { Icon } from "./Icon";
 import { relTime } from "@/lib/uiUtil";
 import type { Comment, UserLite } from "@/lib/uiTypes";
 
@@ -149,8 +150,8 @@ export function CommentThread({ parentTyp, parentId }: { parentTyp: "todo" | "re
               placeholder="Kommentar … (@ für Mention)"
               className="input max-h-32 min-h-[44px] flex-1 resize-none py-2.5"
             />
-            <button onClick={submit} disabled={!text.trim() || sending} className="btn-primary h-11 px-4">
-              ➤
+            <button onClick={submit} disabled={!text.trim() || sending} aria-label="Senden" className="btn-primary h-11 w-11 shrink-0 px-0">
+              <Icon name="send" size={18} />
             </button>
           </div>
         </div>

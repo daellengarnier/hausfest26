@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { initials } from "@/lib/uiUtil";
+import { Icon } from "@/components/Icon";
 import type { UserLite } from "@/lib/uiTypes";
 
 export function Avatar({
@@ -57,21 +58,22 @@ export function Spinner({ label }: { label?: string }) {
 }
 
 export function EmptyState({
-  icon = "🌱",
   title,
   hint,
   action,
 }: {
-  icon?: string;
+  icon?: string; // wird ignoriert (Kompatibilität); es wird ein einheitliches Icon gezeigt
   title: string;
   hint?: string;
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white/50 px-6 py-12 text-center">
-      <div className="text-4xl">{icon}</div>
-      <p className="font-medium text-slate-700">{title}</p>
-      {hint && <p className="max-w-xs text-sm text-slate-500">{hint}</p>}
+    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-stone-300 bg-white/60 px-6 py-10 text-center">
+      <span className="mb-1 grid h-12 w-12 place-items-center rounded-full bg-accent/10 text-accent">
+        <Icon name="leaf" size={24} />
+      </span>
+      <p className="font-semibold text-ink">{title}</p>
+      {hint && <p className="max-w-xs text-sm text-stone-500">{hint}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>
   );

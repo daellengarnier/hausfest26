@@ -7,6 +7,7 @@ import { EmptyState, Modal, Spinner } from "@/components/Ui";
 import { useUsers } from "@/lib/useUsers";
 import { formatDate } from "@/lib/uiUtil";
 import type { MeetingDetail, MeetingListItem, RessortSummary } from "@/lib/uiTypes";
+import { Icon } from "@/components/Icon";
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   umfrage_laeuft: { label: "Umfrage läuft", cls: "bg-amber-100 text-amber-700" },
@@ -26,7 +27,7 @@ export default function MeetingsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-white">Sitzungen</h1>
+        <h1 className="text-2xl font-extrabold text-ink">Sitzungen</h1>
         <button className="btn-primary px-4 py-2" onClick={() => setCreateOpen(true)}>
           + Sitzung
         </button>
@@ -176,8 +177,8 @@ function CreateMeetingModal({ open, onClose, onCreated }: { open: boolean; onClo
                 <input type="date" className="input flex-1" value={s.datum} onChange={(e) => updateSlot(i, { datum: e.target.value })} />
                 <input type="time" className="input w-28" value={s.startzeit} onChange={(e) => updateSlot(i, { startzeit: e.target.value })} />
                 {slots.length > 1 && (
-                  <button className="text-slate-400 hover:text-red-500" onClick={() => setSlots((p) => p.filter((_, idx) => idx !== i))}>
-                    ✕
+                  <button className="text-stone-400 hover:text-red-500" onClick={() => setSlots((p) => p.filter((_, idx) => idx !== i))} aria-label="Entfernen">
+                    <Icon name="close" size={16} />
                   </button>
                 )}
               </div>

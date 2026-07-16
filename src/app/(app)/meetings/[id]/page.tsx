@@ -8,6 +8,7 @@ import { Avatar, Modal, Spinner } from "@/components/Ui";
 import { useAuth } from "@/components/AuthContext";
 import { VOTE_CLASSES, VOTE_LABEL, formatDateLong, relTime } from "@/lib/uiUtil";
 import type { MeetingDetail, Verfuegbarkeit } from "@/lib/uiTypes";
+import { Icon } from "@/components/Icon";
 
 const VOTES: Verfuegbarkeit[] = ["ja", "vielleicht", "nein"];
 
@@ -106,9 +107,9 @@ export default function MeetingPage() {
                     )}
                   </div>
                   <div className="flex gap-1 text-xs">
-                    <span className="chip bg-emerald-100 text-emerald-700">✓ {slot.tally.ja}</span>
+                    <span className="chip bg-accent/10 text-accent-dark"><Icon name="check" size={12} /> {slot.tally.ja}</span>
                     <span className="chip bg-amber-100 text-amber-700">? {slot.tally.vielleicht}</span>
-                    <span className="chip bg-red-100 text-red-600">✕ {slot.tally.nein}</span>
+                    <span className="chip bg-red-100 text-red-700"><Icon name="close" size={12} /> {slot.tally.nein}</span>
                   </div>
                 </div>
 

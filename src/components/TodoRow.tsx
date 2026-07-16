@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/apiClient";
 import { AvatarStack, Modal } from "./Ui";
+import { Icon } from "./Icon";
 import { STATUS_CLASSES, STATUS_LABEL, formatDate, isOverdue } from "@/lib/uiUtil";
 import type { Todo, TodoStatus } from "@/lib/uiTypes";
 
@@ -72,10 +73,10 @@ export function TodoRow({
           onClick={toggleDone}
           aria-label="Erledigt umschalten"
           className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${
-            done ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 text-transparent"
+            done ? "border-accent bg-accent text-white" : "border-stone-300 text-transparent"
           }`}
         >
-          ✓
+          <Icon name="check" size={13} strokeWidth={2.4} />
         </button>
 
         <div className="min-w-0 flex-1">
@@ -87,11 +88,15 @@ export function TodoRow({
               {STATUS_LABEL[status]}
             </button>
             {todo.fristDatum && (
-              <span className={`chip ${overdue ? "bg-rose-100 text-rose-600" : "bg-slate-100 text-slate-500"}`}>
-                📅 {formatDate(todo.fristDatum)}
+              <span className={`chip ${overdue ? "bg-red-100 text-red-700" : "bg-stone-100 text-stone-500"}`}>
+                <Icon name="calendar" size={12} /> {formatDate(todo.fristDatum)}
               </span>
             )}
-            {!!todo.commentCount && <span className="text-slate-400">💬 {todo.commentCount}</span>}
+            {!!todo.commentCount && (
+              <span className="inline-flex items-center gap-1 text-stone-400">
+                <Icon name="chat" size={13} /> {todo.commentCount}
+              </span>
+            )}
           </div>
         </div>
 
@@ -99,9 +104,9 @@ export function TodoRow({
         <button
           onClick={askDelete}
           aria-label="Todo löschen"
-          className="shrink-0 rounded-lg p-1.5 text-slate-300 hover:bg-rose-50 hover:text-rose-500"
+          className="shrink-0 rounded-lg p-1.5 text-stone-300 hover:bg-red-50 hover:text-red-600"
         >
-          🗑️
+          <Icon name="trash" size={17} />
         </button>
       </Link>
 

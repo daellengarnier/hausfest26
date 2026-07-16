@@ -1,24 +1,23 @@
 @import "tailwindcss";
 
-/* ─── Design-System: „Unterwasser / Spinnerei-Flyer" ──────────────────────
-   Tiefes Blau, pinke Blasen, oranger Molch, Algen-Grün. Psychedelisch,
-   aber Inhalt bleibt in hellen Cards gut lesbar.                            */
+/* ─── Design-System: warm & naturnah ──────────────────────────────────────
+   Sandiges Papier, Salbei-/Waldgrün, Terrakotta-Akzent, warme Neutraltöne.  */
 @theme {
-  --color-accent: #e5309e; /* Magenta-Pink (Flyer-Blasenschrift) */
-  --color-accent-dark: #a1187a;
-  --color-accent-light: #ff9ede;
-  --color-newt: #ff5a2b; /* Molch-Orange */
-  --color-algae: #34d399; /* Algen-Grün */
-  --color-abyss: #0a1663; /* Tiefblau */
-  --color-ink: #1a1430;
+  --color-accent: #4b7f52; /* Waldgrün */
+  --color-accent-dark: #35603c;
+  --color-accent-light: #cfe0cf;
+  --color-terra: #c2703d; /* Terrakotta (warmer Zweitakzent) */
+  --color-terra-light: #eccdb6;
+  --color-ink: #2c261d; /* warmes Dunkelbraun */
+  --color-mute: #857c6b;
 
   --font-sans: ui-rounded, "Segoe UI Rounded", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
-  --gradient-brand: linear-gradient(135deg, #ff5ab0 0%, #c026d3 46%, #4f46e5 100%);
-  --shadow-soft: 0 1px 2px rgba(5, 10, 40, 0.06), 0 16px 34px -16px rgba(5, 10, 40, 0.45);
-  --shadow-pop: 0 12px 34px -10px rgba(236, 72, 153, 0.5);
+  --gradient-brand: linear-gradient(135deg, #6aa86f 0%, #4b7f52 55%, #35603c 100%);
+  --shadow-soft: 0 1px 2px rgba(60, 46, 24, 0.05), 0 14px 30px -16px rgba(60, 46, 24, 0.22);
+  --shadow-pop: 0 10px 26px -12px rgba(75, 127, 82, 0.55);
 }
 
 html,
@@ -26,63 +25,54 @@ body {
   height: 100%;
 }
 
-/* Tiefsee-Hintergrund mit „Blasen"-Glüh-Punkten. Fix, damit es beim Scrollen ruhig bleibt. */
 body {
   margin: 0;
-  color: #1a1430; /* Standard dunkel – für helle Cards/Modals */
+  color: #2c261d;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
   font-family: var(--font-sans);
-  background-color: #0a1663;
+  /* Warmes Papier mit ganz dezenten, erdigen Lichtflecken. */
+  background-color: #f3eee1;
   background-image:
-    radial-gradient(26rem 26rem at 10% 6%, rgba(56, 189, 248, 0.22), transparent 60%),
-    radial-gradient(24rem 24rem at 90% 12%, rgba(236, 72, 153, 0.24), transparent 60%),
-    radial-gradient(30rem 30rem at 78% 88%, rgba(168, 85, 247, 0.22), transparent 62%),
-    radial-gradient(22rem 22rem at 16% 96%, rgba(52, 211, 153, 0.16), transparent 60%),
-    linear-gradient(160deg, #0e2a95 0%, #0a1663 55%, #08103f 100%);
+    radial-gradient(34rem 30rem at 8% 0%, rgba(75, 127, 82, 0.1), transparent 60%),
+    radial-gradient(30rem 28rem at 100% 8%, rgba(194, 112, 61, 0.09), transparent 58%),
+    radial-gradient(30rem 30rem at 60% 100%, rgba(122, 143, 63, 0.08), transparent 62%);
   background-attachment: fixed;
 }
 
 .pb-safe {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.4rem);
 }
 .pt-safe {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.4rem);
 }
 
-/* Marken-Gradient als Fläche / Text. */
 .brand-gradient {
   background-image: var(--gradient-brand);
 }
 .brand-text {
-  background-image: linear-gradient(120deg, #ff8ad4, #f0abfc 60%, #a5b4fc);
+  background-image: linear-gradient(120deg, #5a9a63, #4b7f52 55%, #7a8f3f);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* Glas-Optik (Header/Tab-Bar) auf dunklem Grund. */
+/* Warme Glas-Optik für Header/Tab-Bar auf hellem Grund. */
 .glass {
-  background: rgba(10, 22, 99, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(247, 243, 233, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(60, 46, 24, 0.08);
 }
 
-/* „Blasen"-Glow hinter Elementen. */
-.bubble-glow {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 18px 40px -16px rgba(236, 72, 153, 0.55);
-}
-
-/* Auth-Hintergrund (identisch zur Tiefsee, etwas dichter). */
 .auth-bg {
-  background-color: #0a1663;
+  background-color: #33472f;
   background-image:
-    radial-gradient(30rem 24rem at 8% -6%, rgba(56, 189, 248, 0.4), transparent 60%),
-    radial-gradient(28rem 26rem at 104% 8%, rgba(236, 72, 153, 0.42), transparent 58%),
-    radial-gradient(30rem 26rem at 50% 118%, rgba(168, 85, 247, 0.4), transparent 60%),
-    linear-gradient(160deg, #123bb0 0%, #0a1663 60%, #08103f 100%);
+    radial-gradient(34rem 26rem at 6% -8%, rgba(122, 168, 96, 0.5), transparent 60%),
+    radial-gradient(30rem 26rem at 106% 6%, rgba(194, 112, 61, 0.42), transparent 58%),
+    radial-gradient(30rem 26rem at 50% 118%, rgba(53, 96, 60, 0.6), transparent 60%),
+    linear-gradient(160deg, #3f5b39 0%, #33472f 60%, #253521 100%);
 }
 
 @layer components {
@@ -98,26 +88,26 @@ body {
     box-shadow: var(--shadow-pop);
   }
   .btn-primary:hover {
-    filter: brightness(1.07) saturate(1.05);
+    filter: brightness(1.05);
   }
   .btn-ghost {
-    @apply bg-slate-100 text-slate-700 ring-1 ring-slate-200 hover:bg-slate-200;
+    @apply bg-stone-100 text-stone-700 ring-1 ring-stone-200 hover:bg-stone-200;
   }
   .btn-danger {
-    @apply bg-rose-50 text-rose-600 ring-1 ring-rose-100 hover:bg-rose-100;
+    @apply bg-red-50 text-red-700 ring-1 ring-red-100 hover:bg-red-100;
   }
   .input {
-    @apply w-full rounded-xl border border-slate-300/80 bg-white px-3.5 py-2.5 text-base outline-none transition;
+    @apply w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-base text-ink outline-none transition;
   }
   .input:focus {
     @apply border-accent;
-    box-shadow: 0 0 0 3px rgba(229, 48, 158, 0.18);
+    box-shadow: 0 0 0 3px rgba(75, 127, 82, 0.18);
   }
   .label {
-    @apply mb-1 block text-sm font-medium text-slate-600;
+    @apply mb-1 block text-sm font-medium text-stone-600;
   }
   .card {
-    @apply rounded-3xl bg-white text-ink ring-1 ring-slate-900/5;
+    @apply rounded-2xl bg-white text-ink ring-1 ring-stone-900/5;
     box-shadow: var(--shadow-soft);
   }
   .chip {
@@ -132,5 +122,5 @@ body {
 .prose-protocol p { @apply my-1.5; }
 .prose-protocol ul { @apply my-1.5 list-disc pl-5; }
 .prose-protocol li { @apply my-0.5; }
-.prose-protocol code { @apply rounded bg-slate-200 px-1 py-0.5 text-[0.85em]; }
+.prose-protocol code { @apply rounded bg-stone-200 px-1 py-0.5 text-[0.85em]; }
 .prose-protocol strong { @apply font-semibold; }
