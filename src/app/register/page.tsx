@@ -33,16 +33,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-accent to-accent-dark px-6 py-12">
+    <div className="auth-bg flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center text-white">
-          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-white/15 backdrop-blur">
-            <span className="grid h-9 w-9 place-items-center rounded-full border-4 border-white">
-              <span className="h-2.5 w-2.5 rounded-full bg-pink-400" />
+          <div className="mx-auto mb-4 grid h-[68px] w-[68px] place-items-center rounded-[22px] bg-white/10 shadow-2xl ring-1 ring-white/25 backdrop-blur">
+            <span className="grid h-10 w-10 place-items-center rounded-full border-[3px] border-white">
+              <span className="h-3 w-3 rounded-full bg-rose-400" />
             </span>
           </div>
-          <h1 className="text-3xl font-bold">Konto erstellen</h1>
-          <p className="mt-1 text-white/80">Hausfest 26 – Orga der Spinnerei</p>
+          <h1 className="text-4xl font-extrabold tracking-tight">Konto erstellen</h1>
+          <p className="mt-1.5 text-white/75">Hausfest 26 – Orga der Spinnerei</p>
         </div>
 
         <form onSubmit={submit} className="card space-y-4 p-6">

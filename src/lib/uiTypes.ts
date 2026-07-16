@@ -27,6 +27,7 @@ export interface RessortSummary {
   beschreibung: string;
   farbe: string;
   reihenfolge: number;
+  hatZeitplan?: boolean;
   leads: UserLite[];
   openTodos: number;
   totalTodos: number;

@@ -73,13 +73,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col bg-slate-100">
-      <header className="pt-safe sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <header className="pt-safe sticky top-0 z-30 border-b border-slate-900/5 bg-white/80 backdrop-blur-lg">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-white">
-              <span className="h-3 w-3 rounded-full border-2 border-white" />
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="brand-gradient grid h-9 w-9 place-items-center rounded-xl shadow-[var(--shadow-pop)]">
+              <span className="h-3.5 w-3.5 rounded-full border-[2.5px] border-white" />
             </span>
-            <span className="text-lg font-bold tracking-tight">Hausfest 26</span>
+            <span className="text-lg font-extrabold tracking-tight">
+              Hausfest <span className="brand-text">26</span>
+            </span>
           </Link>
           <div className="relative" ref={menuRef}>
             <button onClick={() => setMenuOpen((o) => !o)} className="flex items-center gap-2 rounded-full p-0.5 active:scale-95">
@@ -129,27 +131,29 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       <main className="flex-1 px-4 py-4 pb-28">{children}</main>
 
-      <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl border-t border-slate-200 bg-white/95 backdrop-blur">
-        <div className="grid grid-cols-4">
+      <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl border-t border-slate-900/5 bg-white/90 backdrop-blur-lg">
+        <div className="grid grid-cols-4 px-1 pt-1">
           {TABS.map((t) => {
             const isActive = t.exact ? pathname === t.href : pathname.startsWith(t.href);
             return (
               <Link
                 key={t.href}
                 href={t.href}
-                className={`relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition ${
-                  isActive ? "text-accent" : "text-slate-500"
-                }`}
+                className="relative flex flex-col items-center gap-1 py-1.5 text-[11px] font-semibold"
               >
-                <span className="relative text-xl leading-none">
+                <span
+                  className={`relative grid h-8 w-16 place-items-center rounded-full text-xl leading-none transition-all duration-200 ${
+                    isActive ? "bg-accent/10 text-accent" : "text-slate-400"
+                  }`}
+                >
                   {t.icon}
                   {t.badge && unread > 0 && (
-                    <span className="absolute -right-2 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    <span className="absolute right-2 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
                       {unread > 99 ? "99+" : unread}
                     </span>
                   )}
                 </span>
-                {t.label}
+                <span className={isActive ? "text-accent" : "text-slate-500"}>{t.label}</span>
               </Link>
             );
           })}

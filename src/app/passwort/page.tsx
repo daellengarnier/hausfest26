@@ -43,7 +43,7 @@ export default function ChangePasswordPage() {
   };
 
   const wrapperClass = forced
-    ? "flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-accent to-accent-dark px-6 py-12"
+    ? "auth-bg flex min-h-screen flex-col items-center justify-center px-6 py-12"
     : "mx-auto max-w-md px-4 py-8";
 
   return (
