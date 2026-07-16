@@ -23,7 +23,7 @@ export default function RessortPage() {
   const params = useParams<{ id: string }>();
   const ressortId = Number(params.id);
   const [data, setData] = useState<DetailResponse | null>(null);
-  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan">("todos");
+  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | null>(null);
   const [error, setError] = useState("");
   const [todoModal, setTodoModal] = useState<{ open: boolean; subId: number | null }>({ open: false, subId: null });
   const [subModalOpen, setSubModalOpen] = useState(false);
@@ -45,6 +45,8 @@ export default function RessortPage() {
   const todosWithoutSub = todos.filter((t) => !t.subRessortId);
   const todosBySub = (subId: number) => todos.filter((t) => t.subRessortId === subId);
   const openTodoCount = todos.filter((t) => t.status !== "erledigt").length;
+  // Programm (mit Zeitplan) öffnet standardmäßig im Zeitplan-Tab.
+  const activeTab = tab ?? (ressort.hatZeitplan ? "zeitplan" : "todos");
 
   return (
     <div className="space-y-4">
@@ -68,21 +70,21 @@ export default function RessortPage() {
 
       <div className="flex gap-1 rounded-xl bg-slate-200/70 p-1 text-sm font-medium">
         {ressort.hatZeitplan && (
-          <button className={`flex-1 rounded-lg py-2 ${tab === "zeitplan" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("zeitplan")}>
+          <button className={`flex-1 rounded-lg py-2 ${activeTab === "zeitplan" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("zeitplan")}>
             Zeitplan
           </button>
         )}
-        <button className={`flex-1 rounded-lg py-2 ${tab === "todos" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("todos")}>
+        <button className={`flex-1 rounded-lg py-2 ${activeTab === "todos" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("todos")}>
           Todos {openTodoCount > 0 && <span className="text-slate-400">({openTodoCount})</span>}
         </button>
-        <button className={`flex-1 rounded-lg py-2 ${tab === "pinnwand" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("pinnwand")}>
+        <button className={`flex-1 rounded-lg py-2 ${activeTab === "pinnwand" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("pinnwand")}>
           Pinnwand
         </button>
       </div>
 
-      {tab === "zeitplan" ? (
+      {activeTab === "zeitplan" ? (
         <Zeitplan ressortId={ressortId} />
-      ) : tab === "todos" ? (
+      ) : activeTab === "todos" ? (
         <div className="space-y-4">
           <div className="flex gap-2">
             <button className="btn-primary flex-1" onClick={() => setTodoModal({ open: true, subId: null })}>

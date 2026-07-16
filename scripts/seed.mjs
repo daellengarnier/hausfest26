@@ -43,6 +43,18 @@ try {
       for (const sub of r.subs) {
         await tx`INSERT INTO sub_ressorts ("ressortId", name, reihenfolge) VALUES (${row.id}, ${sub}, ${sOrder++})`;
       }
+      if (r.zeitplan) {
+        const floors = [
+          ["Club", "#6366f1"],
+          ["Ambient (EG Nord)", "#06b6d4"],
+          ["Alternativfloor (Family-WG)", "#f43f5e"],
+          ["Garten", "#22c55e"],
+        ];
+        let fOrder = 1;
+        for (const [fname, fcolor] of floors) {
+          await tx`INSERT INTO schedule_floors ("ressortId", name, farbe, reihenfolge) VALUES (${row.id}, ${fname}, ${fcolor}, ${fOrder++})`;
+        }
+      }
     }
   });
 

@@ -2,16 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/apiClient";
-import { Modal, Spinner, EmptyState } from "./Ui";
-import type { ScheduleEntry } from "@/lib/uiTypes";
+import { Modal, Spinner } from "./Ui";
+import type { ScheduleEntry, ScheduleFloor } from "@/lib/uiTypes";
 
-// Zeitachse: 16:00 (min 0) bis 08:00 des Folgetags (min 960).
+// Zeitachse: 16:00 (min 0) bis 08:00 des Folgetags (min 960), vertikal nach unten.
 const START_HOUR = 16;
 const SPAN = 960;
 const STEP = 15;
-const PX_PER_MIN = 2.6;
-const LABEL_W = 96;
-const ROW_H = 46;
+const PX_PER_MIN = 1.5; // 960 min → 1440 px
+const TIME_W = 50;
+const COL_W = 128;
+const HEADER_H = 44;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 function minToLabel(min: number): string {
@@ -19,158 +20,245 @@ function minToLabel(min: number): string {
   return `${pad(Math.floor(total / 60) % 24)}:${pad(total % 60)}`;
 }
 const TIME_OPTIONS = Array.from({ length: SPAN / STEP + 1 }, (_, i) => i * STEP);
-
-const FLOOR_COLORS = ["#ec4899", "#6366f1", "#06b6d4", "#22c55e", "#f97316", "#8b5cf6", "#eab308", "#ef4444"];
-function floorColor(floor: string, floors: string[]): string {
-  const idx = Math.max(0, floors.indexOf(floor));
-  return FLOOR_COLORS[idx % FLOOR_COLORS.length];
-}
-
-// Ordnet Einträge eines Floors überschneidungsfrei in „Lanes" (Zeilen) an.
-function packLanes(entries: ScheduleEntry[]): { entry: ScheduleEntry; lane: number }[] {
-  const laneEnds: number[] = [];
-  const sorted = [...entries].sort((a, b) => a.startMin - b.startMin);
-  return sorted.map((entry) => {
-    let lane = laneEnds.findIndex((end) => end <= entry.startMin);
-    if (lane === -1) {
-      lane = laneEnds.length;
-      laneEnds.push(entry.endMin);
-    } else {
-      laneEnds[lane] = entry.endMin;
-    }
-    return { entry, lane };
-  });
-}
+const HOURS = Array.from({ length: SPAN / 60 + 1 }, (_, i) => i * 60);
 
 export function Zeitplan({ ressortId }: { ressortId: number }) {
-  const [entries, setEntries] = useState<ScheduleEntry[] | null>(null);
-  const [editing, setEditing] = useState<ScheduleEntry | "new" | null>(null);
+  const [floors, setFloors] = useState<ScheduleFloor[] | null>(null);
+  const [entries, setEntries] = useState<ScheduleEntry[]>([]);
+  const [actModal, setActModal] = useState<ScheduleEntry | "new" | null>(null);
+  const [floorModal, setFloorModal] = useState(false);
+  const [deleteFloor, setDeleteFloor] = useState<ScheduleFloor | null>(null);
 
   const load = () =>
-    api.get<{ entries: ScheduleEntry[] }>(`/ressorts/${ressortId}/schedule`).then((d) => setEntries(d.entries));
+    api.get<{ floors: ScheduleFloor[]; entries: ScheduleEntry[] }>(`/ressorts/${ressortId}/schedule`).then((d) => {
+      setFloors(d.floors);
+      setEntries(d.entries);
+    });
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ressortId]);
 
-  const floors = useMemo(() => {
-    if (!entries) return [];
-    const byFloor = new Map<string, number>();
+  // Anzuzeigende Spalten: definierte Floors + evtl. verwaiste Act-Floors (grau).
+  const displayFloors = useMemo(() => {
+    const list: { name: string; farbe: string; id: number | null }[] = (floors ?? []).map((f) => ({
+      name: f.name,
+      farbe: f.farbe,
+      id: f.id,
+    }));
+    const known = new Set(list.map((f) => f.name));
     for (const e of entries) {
-      const f = e.floor || "Ohne Floor";
-      if (!byFloor.has(f) || e.startMin < byFloor.get(f)!) byFloor.set(f, e.startMin);
+      const fname = e.floor || "Ohne Ort";
+      if (!known.has(fname)) {
+        known.add(fname);
+        list.push({ name: fname, farbe: "#94a3b8", id: null });
+      }
     }
-    return [...byFloor.entries()].sort((a, b) => a[1] - b[1]).map(([f]) => f);
-  }, [entries]);
+    return list;
+  }, [floors, entries]);
 
-  if (entries === null) return <Spinner label="Lade Zeitplan …" />;
+  if (floors === null) return <Spinner label="Lade Zeitplan …" />;
 
-  const hours = Array.from({ length: SPAN / 60 + 1 }, (_, i) => i * 60);
-  const totalW = LABEL_W + SPAN * PX_PER_MIN;
+  const colIndex = (name: string) => displayFloors.findIndex((f) => f.name === (name || "Ohne Ort"));
+  const gridW = displayFloors.length * COL_W;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-semibold">Zeitplan</h2>
-          <p className="text-xs text-slate-500">16:00 – 08:00, pro Floor eine Zeile</p>
+          <p className="text-xs text-slate-500">16:00 – 08:00 · nach unten scrollen</p>
         </div>
-        <button className="btn-primary px-3 py-2 text-sm" onClick={() => setEditing("new")}>
-          + Act
-        </button>
+        <div className="flex gap-2">
+          <button className="btn-ghost px-3 py-2 text-sm" onClick={() => setFloorModal(true)}>
+            + Ort
+          </button>
+          <button className="btn-primary px-3 py-2 text-sm" onClick={() => setActModal("new")}>
+            + Act
+          </button>
+        </div>
       </div>
 
-      {entries.length === 0 ? (
-        <EmptyState
-          icon="🎶"
-          title="Noch kein Programm"
-          hint="Leg den ersten Act an – Floor, Name und Uhrzeit. Danach erscheint hier die Timeline."
-          action={
-            <button className="btn-primary" onClick={() => setEditing("new")}>
-              + Ersten Act anlegen
-            </button>
-          }
-        />
+      {displayFloors.length === 0 ? (
+        <div className="card p-6 text-center text-sm text-slate-500">
+          Noch keine Orte. Leg zuerst einen Ort an (z.&nbsp;B. &bdquo;Club&ldquo;), dann Acts.
+        </div>
       ) : (
-        <div className="card overflow-x-auto p-0">
-          <div style={{ width: totalW, minWidth: "100%" }}>
-            {/* Stundenkopf */}
-            <div className="flex border-b border-slate-200">
-              <div className="sticky left-0 z-10 shrink-0 bg-white" style={{ width: LABEL_W }} />
-              <div className="relative" style={{ width: SPAN * PX_PER_MIN, height: 28 }}>
-                {hours.map((h) => (
-                  <div
-                    key={h}
-                    className="absolute top-0 h-full border-l border-slate-100 pl-1 text-[11px] text-slate-400"
-                    style={{ left: h * PX_PER_MIN }}
-                  >
+        <div className="card overflow-auto" style={{ maxHeight: "72vh" }}>
+          <div style={{ width: TIME_W + gridW, position: "relative" }}>
+            {/* Kopfzeile mit Floors (sticky oben) */}
+            <div className="sticky top-0 z-20 flex" style={{ height: HEADER_H }}>
+              <div className="sticky left-0 z-30 shrink-0 border-b border-r border-slate-200 bg-white" style={{ width: TIME_W }} />
+              {displayFloors.map((f) => (
+                <div
+                  key={f.name}
+                  className="flex shrink-0 items-center justify-between gap-1 border-b border-l border-slate-200 bg-white px-2"
+                  style={{ width: COL_W }}
+                >
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: f.farbe }} />
+                    <span className="truncate text-xs font-semibold" style={{ color: f.farbe }}>
+                      {f.name}
+                    </span>
+                  </span>
+                  {f.id !== null && (
+                    <button
+                      className="shrink-0 rounded p-0.5 text-slate-300 hover:text-rose-500"
+                      onClick={() => setDeleteFloor(floors.find((x) => x.id === f.id) ?? null)}
+                      aria-label="Ort löschen"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Körper: Zeit-Gutter + Spalten */}
+            <div className="flex" style={{ height: SPAN * PX_PER_MIN }}>
+              <div className="sticky left-0 z-10 shrink-0 border-r border-slate-200 bg-white" style={{ width: TIME_W }}>
+                {HOURS.map((h) => (
+                  <div key={h} className="absolute right-1 text-[10px] font-medium text-slate-400" style={{ top: h * PX_PER_MIN - 6 }}>
                     {minToLabel(h)}
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Floor-Zeilen */}
-            {floors.map((floor) => {
-              const packed = packLanes(entries.filter((e) => (e.floor || "Ohne Floor") === floor));
-              const lanes = Math.max(1, ...packed.map((p) => p.lane + 1));
-              const color = floorColor(floor, floors);
-              return (
-                <div key={floor} className="flex border-b border-slate-100 last:border-0">
-                  <div
-                    className="sticky left-0 z-10 flex shrink-0 items-center gap-1.5 border-r border-slate-200 bg-white px-2 text-xs font-medium"
-                    style={{ width: LABEL_W }}
-                  >
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
-                    <span className="truncate">{floor}</span>
-                  </div>
-                  <div className="relative" style={{ width: SPAN * PX_PER_MIN, height: lanes * ROW_H + 8 }}>
-                    {/* Stunden-Gitter */}
-                    {hours.map((h) => (
-                      <div key={h} className="absolute top-0 h-full border-l border-slate-100" style={{ left: h * PX_PER_MIN }} />
-                    ))}
-                    {packed.map(({ entry, lane }) => (
-                      <button
-                        key={entry.id}
-                        onClick={() => setEditing(entry)}
-                        className="absolute overflow-hidden rounded-lg px-2 py-1 text-left text-white shadow-sm active:scale-[0.99]"
-                        style={{
-                          left: entry.startMin * PX_PER_MIN + 2,
-                          width: Math.max(28, (entry.endMin - entry.startMin) * PX_PER_MIN - 4),
-                          top: lane * ROW_H + 4,
-                          height: ROW_H - 8,
-                          background: color,
-                        }}
-                        title={`${entry.titel} · ${minToLabel(entry.startMin)}–${minToLabel(entry.endMin)}`}
-                      >
-                        <span className="block truncate text-xs font-semibold leading-tight">{entry.titel}</span>
+              <div className="relative" style={{ width: gridW }}>
+                {HOURS.map((h) => (
+                  <div key={h} className="absolute inset-x-0 border-t border-slate-100" style={{ top: h * PX_PER_MIN }} />
+                ))}
+                {displayFloors.map((_, i) => (
+                  <div key={i} className="absolute bottom-0 top-0 border-l border-slate-100" style={{ left: i * COL_W }} />
+                ))}
+                {entries.map((e) => {
+                  const col = colIndex(e.floor);
+                  if (col < 0) return null;
+                  const color = displayFloors[col].farbe;
+                  const h = (e.endMin - e.startMin) * PX_PER_MIN;
+                  return (
+                    <button
+                      key={e.id}
+                      onClick={() => setActModal(e)}
+                      className="absolute overflow-hidden rounded-lg px-1.5 py-1 text-left text-white shadow-sm active:scale-[0.99]"
+                      style={{
+                        left: col * COL_W + 3,
+                        width: COL_W - 6,
+                        top: e.startMin * PX_PER_MIN + 1,
+                        height: Math.max(20, h - 2),
+                        background: color,
+                      }}
+                      title={`${e.titel} · ${minToLabel(e.startMin)}–${minToLabel(e.endMin)}`}
+                    >
+                      <span className="block truncate text-xs font-semibold leading-tight">{e.titel}</span>
+                      {h > 30 && (
                         <span className="block truncate text-[10px] leading-tight opacity-90">
-                          {minToLabel(entry.startMin)}–{minToLabel(entry.endMin)}
+                          {minToLabel(e.startMin)}–{minToLabel(e.endMin)}
                         </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {editing && (
+      {actModal && (
         <ActModal
           ressortId={ressortId}
-          entry={editing === "new" ? null : editing}
-          floors={floors}
-          onClose={() => setEditing(null)}
+          entry={actModal === "new" ? null : actModal}
+          floors={displayFloors.map((f) => f.name)}
+          onClose={() => setActModal(null)}
           onSaved={() => {
-            setEditing(null);
+            setActModal(null);
             load();
           }}
         />
       )}
+      {floorModal && (
+        <FloorModal
+          ressortId={ressortId}
+          onClose={() => setFloorModal(false)}
+          onSaved={() => {
+            setFloorModal(false);
+            load();
+          }}
+        />
+      )}
+      {deleteFloor && (
+        <Modal
+          open
+          onClose={() => setDeleteFloor(null)}
+          title={`Ort „${deleteFloor.name}" löschen?`}
+          footer={
+            <div className="flex gap-2">
+              <button className="btn-ghost flex-1" onClick={() => setDeleteFloor(null)}>
+                Abbrechen
+              </button>
+              <button
+                className="btn-danger flex-1"
+                onClick={async () => {
+                  await api.del(`/ressorts/${ressortId}/schedule/floors/${deleteFloor.id}`);
+                  setDeleteFloor(null);
+                  load();
+                }}
+              >
+                Löschen
+              </button>
+            </div>
+          }
+        >
+          <p className="text-sm text-slate-600">Alle Acts auf diesem Ort werden ebenfalls entfernt.</p>
+        </Modal>
+      )}
     </div>
+  );
+}
+
+function FloorModal({ ressortId, onClose, onSaved }: { ressortId: number; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const save = async () => {
+    if (!name.trim()) return setError("Name erforderlich");
+    setSaving(true);
+    setError("");
+    try {
+      await api.post(`/ressorts/${ressortId}/schedule/floors`, { name: name.trim() });
+      onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Ort / Floor hinzufügen"
+      footer={
+        <div className="flex gap-2">
+          <button className="btn-ghost flex-1" onClick={onClose}>
+            Abbrechen
+          </button>
+          <button className="btn-primary flex-1" onClick={save} disabled={saving}>
+            Hinzufügen
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-2">
+        <label className="label">Name</label>
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="z. B. Pyramide, Treppenhaus" />
+        <p className="text-xs text-slate-400">Farbe wird automatisch vergeben.</p>
+        {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
+      </div>
+    </Modal>
   );
 }
 
@@ -190,17 +278,18 @@ function ActModal({
   const editing = !!entry;
   const [floor, setFloor] = useState(entry?.floor ?? floors[0] ?? "");
   const [titel, setTitel] = useState(entry?.titel ?? "");
-  const [startMin, setStartMin] = useState(entry?.startMin ?? 4 * 60); // Default 20:00
+  const [startMin, setStartMin] = useState(entry?.startMin ?? 4 * 60); // 20:00
   const [endMin, setEndMin] = useState(entry?.endMin ?? 5 * 60); // 21:00
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const save = async () => {
+    if (!floor) return setError("Bitte zuerst einen Ort anlegen");
     if (!titel.trim()) return setError("Act/Name erforderlich");
     if (endMin <= startMin) return setError("Ende muss nach Start liegen");
     setSaving(true);
     setError("");
-    const payload = { floor: floor.trim(), titel: titel.trim(), startMin, endMin };
+    const payload = { floor, titel: titel.trim(), startMin, endMin };
     try {
       if (editing) await api.patch(`/ressorts/${ressortId}/schedule/${entry!.id}`, payload);
       else await api.post(`/ressorts/${ressortId}/schedule`, payload);
@@ -240,19 +329,15 @@ function ActModal({
     >
       <div className="space-y-4">
         <div>
-          <label className="label">Floor / Bühne</label>
-          <input
-            className="input"
-            list="floor-suggestions"
-            value={floor}
-            onChange={(e) => setFloor(e.target.value)}
-            placeholder="z. B. Club, Alternativfloor, Garten"
-          />
-          <datalist id="floor-suggestions">
+          <label className="label">Ort / Floor</label>
+          <select className="input" value={floor} onChange={(e) => setFloor(e.target.value)}>
+            {floors.length === 0 && <option value="">— zuerst Ort anlegen —</option>}
             {floors.map((f) => (
-              <option key={f} value={f} />
+              <option key={f} value={f}>
+                {f}
+              </option>
             ))}
-          </datalist>
+          </select>
         </div>
         <div>
           <label className="label">Act / DJ / Band</label>
@@ -280,7 +365,7 @@ function ActModal({
             </select>
           </div>
         </div>
-        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
       </div>
     </Modal>
   );

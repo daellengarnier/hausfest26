@@ -183,7 +183,24 @@ export const protocols = pgTable("protocols", {
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Zeitplan-Einträge (Programm-Floors über die Nacht). Zeiten als Minuten seit
+// Floors/Orte eines Zeitplans (Spalten). Vordefiniert + manuell erweiterbar,
+// jeweils mit eigener Farbe und Sortier-Reihenfolge.
+export const scheduleFloors = pgTable(
+  "schedule_floors",
+  {
+    id: serial("id").primaryKey(),
+    ressortId: integer("ressortId")
+      .notNull()
+      .references(() => ressorts.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    farbe: text("farbe").notNull().default("#6366f1"),
+    reihenfolge: integer("reihenfolge").notNull().default(0),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("uq_floor_ressort_name").on(t.ressortId, t.name)],
+);
+
+// Zeitplan-Einträge (Acts pro Floor über die Nacht). Zeiten als Minuten seit
 // Startzeit 16:00 (0) bis 08:00 des Folgetags (960) – umgeht Mitternachts-Fallen.
 export const scheduleEntries = pgTable("schedule_entries", {
   id: serial("id").primaryKey(),

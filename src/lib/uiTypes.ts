@@ -44,6 +44,14 @@ export interface Ressort {
   leads: UserLite[];
 }
 
+export interface ScheduleFloor {
+  id: number;
+  ressortId: number;
+  name: string;
+  farbe: string;
+  reihenfolge: number;
+}
+
 export interface ScheduleEntry {
   id: number;
   ressortId: number;

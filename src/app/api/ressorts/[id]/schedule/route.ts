@@ -1,7 +1,7 @@
 import { eq, asc } from "drizzle-orm";
 import { requireUser, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
-import { scheduleEntries, ressorts } from "@/lib/db/schema";
+import { scheduleEntries, scheduleFloors, ressorts } from "@/lib/db/schema";
 
 const SPAN = 960; // 16:00 → 08:00 (Folgetag) in Minuten
 
@@ -13,12 +13,19 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
   const auth = await requireUser();
   if (isResponse(auth)) return auth;
   const { id } = await ctx.params;
-  const entries = await getDb()
+  const ressortId = Number(id);
+  const db = getDb();
+  const floors = await db
+    .select()
+    .from(scheduleFloors)
+    .where(eq(scheduleFloors.ressortId, ressortId))
+    .orderBy(asc(scheduleFloors.reihenfolge), asc(scheduleFloors.id));
+  const entries = await db
     .select()
     .from(scheduleEntries)
-    .where(eq(scheduleEntries.ressortId, Number(id)))
+    .where(eq(scheduleEntries.ressortId, ressortId))
     .orderBy(asc(scheduleEntries.startMin), asc(scheduleEntries.id));
-  return Response.json({ entries });
+  return Response.json({ floors, entries });
 }
 
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
