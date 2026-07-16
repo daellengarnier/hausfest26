@@ -71,14 +71,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col bg-slate-100">
-      <header className="pt-safe sticky top-0 z-30 border-b border-slate-900/5 bg-white/80 backdrop-blur-lg">
+    <div className="mx-auto flex min-h-screen max-w-2xl flex-col">
+      <header className="pt-safe glass sticky top-0 z-30 border-b">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="brand-gradient grid h-9 w-9 place-items-center rounded-xl shadow-[var(--shadow-pop)]">
+            <span className="brand-gradient bubble-glow grid h-9 w-9 place-items-center rounded-full">
               <span className="h-3.5 w-3.5 rounded-full border-[2.5px] border-white" />
             </span>
-            <span className="text-lg font-extrabold tracking-tight">
+            <span className="text-lg font-extrabold tracking-tight text-white">
               Hausfest <span className="brand-text">26</span>
             </span>
           </Link>
@@ -130,7 +130,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       <main className="flex-1 px-4 py-4 pb-28">{children}</main>
 
-      <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl border-t border-slate-900/5 bg-white/90 backdrop-blur-lg">
+      <nav className="pb-safe glass fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl border-t">
         <div className="grid grid-cols-3 px-1 pt-1">
           {TABS.map((t) => {
             const isActive = t.exact ? pathname === t.href : pathname.startsWith(t.href);
@@ -142,17 +142,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               >
                 <span
                   className={`relative grid h-8 w-16 place-items-center rounded-full text-xl leading-none transition-all duration-200 ${
-                    isActive ? "bg-accent/10 text-accent" : "text-slate-400"
+                    isActive ? "bg-white/15 text-white" : "text-white/50"
                   }`}
                 >
                   {t.icon}
                   {t.badge && unread > 0 && (
-                    <span className="absolute right-2 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                    <span className="absolute right-2 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-newt px-1 text-[10px] font-bold text-white ring-2 ring-[#0a1663]">
                       {unread > 99 ? "99+" : unread}
                     </span>
                   )}
                 </span>
-                <span className={isActive ? "text-accent" : "text-slate-500"}>{t.label}</span>
+                <span className={isActive ? "text-white" : "text-white/60"}>{t.label}</span>
               </Link>
             );
           })}

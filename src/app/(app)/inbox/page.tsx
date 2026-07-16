@@ -50,7 +50,7 @@ export default function InboxPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Inbox</h1>
+        <h1 className="text-2xl font-extrabold text-white">Inbox</h1>
         {unread > 0 && (
           <button className="btn-ghost px-3 py-1.5 text-sm" onClick={markAll}>
             Alle gelesen

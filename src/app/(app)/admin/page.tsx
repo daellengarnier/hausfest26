@@ -31,7 +31,7 @@ export default function AdminPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Administration</h1>
+        <h1 className="text-2xl font-extrabold text-white">Administration</h1>
         <Link href="/" className="text-sm text-slate-400">
           ← zurück
         </Link>

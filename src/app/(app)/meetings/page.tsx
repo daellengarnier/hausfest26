@@ -26,7 +26,7 @@ export default function MeetingsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Sitzungen</h1>
+        <h1 className="text-2xl font-extrabold text-white">Sitzungen</h1>
         <button className="btn-primary px-4 py-2" onClick={() => setCreateOpen(true)}>
           + Sitzung
         </button>

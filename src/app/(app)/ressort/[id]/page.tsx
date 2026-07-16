@@ -151,7 +151,7 @@ export default function RessortPage() {
 
           {protocols.length > 0 && (
             <div>
-              <h3 className="mb-2 px-1 text-sm font-semibold text-slate-500">Protokolle</h3>
+              <h3 className="mb-2 px-1 text-sm font-semibold text-white/70">Protokolle</h3>
               <div className="card divide-y divide-slate-100 overflow-hidden">
                 {protocols.map((p) => (
                   <Link key={p.id} href={`/meetings/${p.meetingId}`} className="flex items-center justify-between px-4 py-3 active:bg-slate-50">

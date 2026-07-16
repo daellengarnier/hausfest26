@@ -37,7 +37,7 @@ export default function MinePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Meine Sachen</h1>
+      <h1 className="text-2xl font-extrabold text-white">Meine Sachen</h1>
 
       <div className="flex gap-1 rounded-xl bg-slate-200/70 p-1 text-sm font-medium">
         <button className={`flex-1 rounded-lg py-2 ${tab === "assigned" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("assigned")}>
@@ -64,7 +64,7 @@ export default function MinePage() {
             </div>
             {doneAssigned.length > 0 && (
               <div>
-                <h3 className="mb-2 px-1 text-sm font-semibold text-slate-500">Erledigt</h3>
+                <h3 className="mb-2 px-1 text-sm font-semibold text-white/70">Erledigt</h3>
                 <div className="card divide-y divide-slate-100 overflow-hidden opacity-70">
                   {doneAssigned.map((t) => <TodoRowWithRessort key={t.id} todo={t} onChanged={load} />)}
                 </div>
