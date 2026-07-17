@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { initials } from "@/lib/uiUtil";
 import { Icon } from "@/components/Icon";
 import type { UserLite } from "@/lib/uiTypes";
@@ -10,21 +10,47 @@ export function Avatar({
   color,
   size = 32,
   ring = false,
+  userId,
+  showName = true,
 }: {
   name: string;
   color: string;
   size?: number;
   ring?: boolean;
+  userId?: number | null;
+  showName?: boolean;
 }) {
+  const [imgError, setImgError] = useState(false);
+  const showImg = userId != null && !imgError;
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold text-white ${
         ring ? "ring-2 ring-white" : ""
-      }`}
+      } ${showName ? "cursor-pointer" : ""}`}
       style={{ background: color, width: size, height: size, fontSize: size * 0.4 }}
       title={name}
+      role={showName ? "button" : undefined}
+      onClick={
+        showName
+          ? (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.dispatchEvent(new CustomEvent("hausfest:name", { detail: name }));
+            }
+          : undefined
+      }
     >
-      {initials(name)}
+      <span className="select-none">{initials(name)}</span>
+      {showImg && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`/api/users/${userId}/avatar`}
+          alt={name}
+          draggable={false}
+          onError={() => setImgError(true)}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
     </span>
   );
 }
@@ -34,7 +60,7 @@ export function AvatarStack({ users, size = 26 }: { users: UserLite[]; size?: nu
   return (
     <span className="flex -space-x-2">
       {users.slice(0, 4).map((u) => (
-        <Avatar key={u.id} name={u.name} color={u.avatarColor} size={size} ring />
+        <Avatar key={u.id} name={u.name} color={u.avatarColor} size={size} ring userId={u.id} />
       ))}
       {users.length > 4 && (
         <span
@@ -45,6 +71,30 @@ export function AvatarStack({ users, size = 26 }: { users: UserLite[]; size?: nu
         </span>
       )}
     </span>
+  );
+}
+
+// Zeigt beim Tippen auf ein Profilbild kurz den ganzen Namen (fixe Pille unten).
+export function NameToast() {
+  const [name, setName] = useState<string | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const on = (e: Event) => {
+      setName((e as CustomEvent<string>).detail);
+      clearTimeout(timer);
+      timer = setTimeout(() => setName(null), 1600);
+    };
+    window.addEventListener("hausfest:name", on);
+    return () => {
+      window.removeEventListener("hausfest:name", on);
+      clearTimeout(timer);
+    };
+  }, []);
+  if (!name) return null;
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center px-4">
+      <span className="rounded-full bg-ink/90 px-4 py-2 text-sm font-semibold text-white shadow-lg">{name}</span>
+    </div>
   );
 }
 

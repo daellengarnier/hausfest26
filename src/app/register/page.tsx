@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
+import { InstallInstructions } from "@/components/InstallInstructions";
+
+interface Profile { id: number; name: string; avatarColor: string }
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [choice, setChoice] = useState(""); // "" = noch nichts, "__new__" = neuer Name, sonst Profilname
+  const [newName, setNewName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -16,9 +21,20 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    fetch("/api/auth/unclaimed")
+      .then((r) => (r.ok ? r.json() : { profiles: [] }))
+      .then((d: { profiles: Profile[] }) => setProfiles(d.profiles ?? []))
+      .catch(() => setProfiles([]));
+  }, []);
+
+  const isNew = choice === "__new__" || profiles.length === 0;
+  const name = isNew ? newName : choice;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!name.trim()) return setError("Bitte deinen Namen wählen oder eingeben.");
     if (password.length < 6) return setError("Passwort muss mindestens 6 Zeichen haben.");
     if (password !== confirm) return setError("Die beiden Passwörter stimmen nicht überein.");
     setLoading(true);
@@ -46,10 +62,29 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={submit} className="card space-y-4 p-6">
-          <div>
-            <label className="label" htmlFor="name">Name</label>
-            <input id="name" className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vorname" required />
-          </div>
+          {profiles.length > 0 && (
+            <div>
+              <label className="label" htmlFor="choice">Dein Name</label>
+              <select id="choice" className="input" value={choice} onChange={(e) => setChoice(e.target.value)} required>
+                <option value="" disabled>
+                  Wähle deinen Namen …
+                </option>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+                <option value="__new__">Ich bin nicht in der Liste …</option>
+              </select>
+              <p className="mt-1 text-xs text-slate-400">Wähle dein vorbereitetes Profil – dir zugeteilte Todos bleiben erhalten.</p>
+            </div>
+          )}
+          {isNew && (
+            <div>
+              <label className="label" htmlFor="name">Name</label>
+              <input id="name" className="input" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Vorname" required />
+            </div>
+          )}
           <div>
             <label className="label" htmlFor="email">E-Mail</label>
             <input
@@ -103,6 +138,13 @@ export default function RegisterPage() {
             </Link>
           </p>
         </form>
+
+        <details className="card mt-4 p-4">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-ink">App auf den Homebildschirm legen</summary>
+          <div className="mt-3">
+            <InstallInstructions />
+          </div>
+        </details>
       </div>
     </div>
   );

@@ -28,7 +28,7 @@ export function AssigneePicker({
               active ? "border-accent bg-accent/10 text-accent-dark" : "border-slate-200 bg-white text-slate-600"
             }`}
           >
-            <Avatar name={u.name} color={u.avatarColor} size={22} />
+            <Avatar name={u.name} color={u.avatarColor} size={22} userId={u.id} showName={false} />
             {u.name}
           </button>
         );

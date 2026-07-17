@@ -78,7 +78,7 @@ export default function RessortPage() {
           {ressort.leads.length === 0 && <span className="text-xs text-stone-400">—</span>}
           {ressort.leads.map((u) => (
             <span key={u.id} className="flex items-center gap-1.5 rounded-full bg-stone-100 py-0.5 pl-0.5 pr-2.5 text-sm">
-              <Avatar name={u.name} color={u.avatarColor} size={22} />
+              <Avatar name={u.name} color={u.avatarColor} size={22} userId={u.id} />
               {u.name}
             </span>
           ))}

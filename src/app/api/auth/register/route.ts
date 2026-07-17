@@ -1,4 +1,4 @@
-import { eq, count } from "drizzle-orm";
+import { eq, and, ne, count } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { createSession, setSessionCookie, hashPassword, jsonError } from "@/lib/auth";
@@ -30,16 +30,40 @@ export async function POST(request: Request) {
   }
 
   const db = getDb();
-  const exists = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
-  if (exists[0]) return jsonError("Diese E-Mail ist bereits registriert", 409);
-
-  // Erster Account wird Admin (Bootstrap); zusätzlich per ADMIN_EMAILS konfigurierbar.
-  const total = await db.select({ c: count() }).from(users);
   const adminEmails = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  const isAdmin = total[0].c === 0 || adminEmails.includes(email);
+  // Admin = erster echter (übernommener) Account; Platzhalter zählen nicht.
+  const claimedCount = await db.select({ c: count() }).from(users).where(eq(users.claimed, true));
+  const isAdmin = claimedCount[0].c === 0 || adminEmails.includes(email);
+
+  // Vorbelegtes Profil (Platzhalter) mit exakt diesem Namen übernehmen?
+  const placeholder = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.name, name), eq(users.claimed, false)))
+    .limit(1);
+
+  if (placeholder[0]) {
+    const emailTaken = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.email, email), ne(users.id, placeholder[0].id)))
+      .limit(1);
+    if (emailTaken[0]) return jsonError("Diese E-Mail ist bereits registriert", 409);
+    await db
+      .update(users)
+      .set({ email, passwordHash: hashPassword(password), claimed: true, active: true, mustChangePassword: false, rolle: isAdmin ? "admin" : "mitglied" })
+      .where(eq(users.id, placeholder[0].id));
+    const token = await createSession(placeholder[0].id);
+    await setSessionCookie(token);
+    return Response.json({ ok: true, admin: isAdmin, claimed: true }, { status: 201 });
+  }
+
+  // Sonst: neues Konto anlegen.
+  const exists = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+  if (exists[0]) return jsonError("Diese E-Mail ist bereits registriert", 409);
 
   const color = COLORS[Math.floor(Math.random() * COLORS.length)];
   const inserted = await db

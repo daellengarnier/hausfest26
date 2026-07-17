@@ -17,6 +17,7 @@ export interface AuthUser {
   email: string;
   rolle: Rolle;
   avatarColor: string;
+  avatarAttachmentId: number | null;
   mustChangePassword: boolean;
 }
 
@@ -71,6 +72,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       email: users.email,
       rolle: users.rolle,
       avatarColor: users.avatarColor,
+      avatarAttachmentId: users.avatarAttachmentId,
       mustChangePassword: users.mustChangePassword,
       expiresAt: sessions.expiresAt,
     })
@@ -86,6 +88,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     email: row.email,
     rolle: row.rolle,
     avatarColor: row.avatarColor,
+    avatarAttachmentId: row.avatarAttachmentId,
     mustChangePassword: row.mustChangePassword,
   };
 }

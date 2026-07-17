@@ -29,8 +29,12 @@ export const users = pgTable("users", {
   passwordHash: text("passwordHash").notNull(),
   rolle: text("rolle").$type<Rolle>().notNull().default("mitglied"),
   avatarColor: text("avatarColor").notNull().default("#64748b"),
+  // Optionales Profilbild (Attachment). Ohne = Initialen auf Farbe.
+  avatarAttachmentId: integer("avatarAttachmentId"),
   mustChangePassword: boolean("mustChangePassword").notNull().default(false),
   active: boolean("active").notNull().default(true),
+  // false = vorbelegtes Profil (Platzhalter), das noch niemand übernommen hat.
+  claimed: boolean("claimed").notNull().default(true),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 

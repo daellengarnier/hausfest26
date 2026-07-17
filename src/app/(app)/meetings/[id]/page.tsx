@@ -133,7 +133,7 @@ export default function MeetingPage() {
                         className="flex items-center gap-1 rounded-full bg-white py-0.5 pl-0.5 pr-2 text-xs ring-1 ring-slate-200"
                         title={`${vt.name}: ${VOTE_LABEL[vt.verfuegbarkeit]}`}
                       >
-                        <Avatar name={vt.name} color={vt.avatarColor} size={18} />
+                        <Avatar name={vt.name} color={vt.avatarColor} size={18} userId={vt.userId} showName={false} />
                         <span
                           className={`inline-block h-2 w-2 rounded-full ${
                             vt.verfuegbarkeit === "ja" ? "bg-emerald-500" : vt.verfuegbarkeit === "vielleicht" ? "bg-amber-400" : "bg-red-400"

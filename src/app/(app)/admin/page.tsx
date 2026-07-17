@@ -85,7 +85,7 @@ function UsersAdmin() {
       <div className="card divide-y divide-slate-100 overflow-hidden">
         {users.map((u) => (
           <div key={u.id} className={`flex items-center gap-3 px-4 py-3 ${u.active ? "" : "opacity-50"}`}>
-            <Avatar name={u.name} color={u.avatarColor} size={38} />
+            <Avatar name={u.name} color={u.avatarColor} size={38} userId={u.id} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">
                 {u.name} {u.rolle === "admin" && <span className="chip bg-accent/10 text-accent-dark">Admin</span>}
@@ -334,7 +334,7 @@ function RessortEditModal({
                     active ? "border-accent bg-accent/10 text-accent-dark" : "border-slate-200 bg-white text-slate-600"
                   }`}
                 >
-                  <Avatar name={u.name} color={u.avatarColor} size={22} />
+                  <Avatar name={u.name} color={u.avatarColor} size={22} userId={u.id} showName={false} />
                   {u.name}
                 </button>
               );

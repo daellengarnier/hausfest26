@@ -11,6 +11,7 @@ export interface User {
   email: string;
   rolle: Rolle;
   avatarColor: string;
+  avatarAttachmentId: number | null;
   mustChangePassword: boolean;
 }
 

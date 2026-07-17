@@ -42,7 +42,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
     const budMap = new Map((budgets ?? []).map((b) => [b.kategorie, b.betragCents]));
     let mine = 0,
       ist = 0;
-    const usr = new Map<number, { name: string; color: string; cents: number }>();
+    const usr = new Map<number, { id: number; name: string; color: string; cents: number }>();
     const expByCat = new Map<string, Expense[]>();
     for (const e of exp) {
       ist += e.betragCents;
@@ -51,7 +51,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
       arr.push(e);
       expByCat.set(e.kategorie, arr);
       if (e.userId != null) {
-        const cur = usr.get(e.userId) ?? { name: e.userName ?? "?", color: e.userColor ?? "#8a8172", cents: 0 };
+        const cur = usr.get(e.userId) ?? { id: e.userId, name: e.userName ?? "?", color: e.userColor ?? "#8a8172", cents: 0 };
         cur.cents += e.betragCents;
         usr.set(e.userId, cur);
       }
@@ -187,7 +187,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
               <div className="space-y-2">
                 {byUser.map((u) => (
                   <div key={u.name} className="flex items-center gap-2 text-sm">
-                    <Avatar name={u.name} color={u.color} size={22} />
+                    <Avatar name={u.name} color={u.color} size={22} userId={u.id} />
                     <span className="flex-1 text-stone-700">{u.name}</span>
                     <span className="font-semibold">CHF {formatChf(u.cents)}</span>
                   </div>

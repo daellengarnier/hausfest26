@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import { api } from "@/lib/apiClient";
-import { Avatar, Spinner } from "@/components/Ui";
+import { Avatar, Spinner, Modal, NameToast } from "@/components/Ui";
+import { InstallInstructions } from "@/components/InstallInstructions";
 import { Icon, type IconName } from "@/components/Icon";
 
 const TABS: { href: string; label: string; icon: IconName; exact: boolean; badge?: boolean }[] = [
@@ -20,7 +21,23 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [installOpen, setInstallOpen] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+
+  const onAvatarFile = async (f: File) => {
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+      const res = await fetch("/api/users/avatar", { method: "POST", body: fd, credentials: "include" });
+      if (res.ok) window.location.reload();
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarFileRef.current) avatarFileRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -88,7 +105,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </Link>
           <div className="relative" ref={menuRef}>
             <button onClick={() => setMenuOpen((o) => !o)} className="relative flex items-center gap-2 rounded-full p-0.5 active:scale-95">
-              <Avatar name={user.name} color={user.avatarColor} size={34} />
+              <Avatar name={user.name} color={user.avatarColor} size={34} userId={user.id} showName={false} />
               {unread > 0 && <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-terra ring-2 ring-[#e7eed9]" />}
             </button>
             {menuOpen && (
@@ -103,6 +120,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   {unread > 0 && (
                     <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white">{unread > 99 ? "99+" : unread}</span>
                   )}
+                </button>
+                <button onClick={() => { setMenuOpen(false); avatarFileRef.current?.click(); }} disabled={uploadingAvatar} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
+                  <Icon name="user" size={17} className="text-stone-500" /> {uploadingAvatar ? "Lädt …" : "Profilbild ändern"}
+                </button>
+                <button onClick={() => { setMenuOpen(false); setInstallOpen(true); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
+                  <Icon name="download" size={17} className="text-stone-500" /> App installieren
                 </button>
                 {user.rolle === "admin" && (
                   <button onClick={() => { setMenuOpen(false); router.push("/admin"); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
@@ -143,6 +166,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           })}
         </div>
       </nav>
+
+      <input
+        ref={avatarFileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => e.target.files?.[0] && onAvatarFile(e.target.files[0])}
+      />
+      {installOpen && (
+        <Modal open onClose={() => setInstallOpen(false)} title="App installieren" footer={<button className="btn-primary w-full" onClick={() => setInstallOpen(false)}>Alles klar</button>}>
+          <InstallInstructions />
+        </Modal>
+      )}
+      <NameToast />
     </div>
   );
 }

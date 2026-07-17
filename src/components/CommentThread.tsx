@@ -98,7 +98,7 @@ export function CommentThread({ parentTyp, parentId }: { parentTyp: "todo" | "re
             const mine = c.autorUserId === user?.id;
             return (
               <li key={c.id} className="flex gap-2.5">
-                <Avatar name={c.autorName ?? "?"} color={c.autorColor ?? "#94a3b8"} size={32} />
+                <Avatar name={c.autorName ?? "?"} color={c.autorColor ?? "#94a3b8"} size={32} userId={c.autorUserId} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm font-semibold">
@@ -129,7 +129,7 @@ export function CommentThread({ parentTyp, parentId }: { parentTyp: "todo" | "re
                   onClick={() => insertMention(u)}
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50"
                 >
-                  <Avatar name={u.name} color={u.avatarColor} size={24} />
+                  <Avatar name={u.name} color={u.avatarColor} size={24} userId={u.id} showName={false} />
                   {u.name}
                 </button>
               ))}
