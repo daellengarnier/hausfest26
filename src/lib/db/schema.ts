@@ -84,6 +84,20 @@ export const expenses = pgTable("expenses", {
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Budgetposten (Plan/Schätzung) je Bereich – was ein Ressort an Kosten erwartet.
+export const budgetItems = pgTable("budget_items", {
+  id: serial("id").primaryKey(),
+  ressortId: integer("ressortId")
+    .notNull()
+    .references(() => ressorts.id, { onDelete: "cascade" }),
+  kategorie: text("kategorie").notNull().default("Sonstiges"),
+  titel: text("titel").notNull().default(""),
+  betragCents: integer("betragCents").notNull(),
+  beschreibung: text("beschreibung").notNull().default(""),
+  createdBy: integer("createdBy").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const ressortLeads = pgTable(
   "ressort_leads",
   {

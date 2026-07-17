@@ -68,6 +68,18 @@ export interface Expense {
   belegFilename: string | null;
 }
 
+export interface BudgetItem {
+  id: number;
+  kategorie: string;
+  titel: string;
+  betragCents: number;
+  beschreibung: string;
+  createdAt: string;
+  createdBy: number | null;
+  createdByName: string | null;
+  createdByColor: string | null;
+}
+
 export type BoardKind = "programm" | "bars";
 
 export interface ScheduleFloor {
