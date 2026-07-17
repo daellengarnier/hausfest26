@@ -149,6 +149,9 @@ export const acts = pgTable("acts", {
   anzahlPersonen: integer("anzahlPersonen"),
   promotext: text("promotext").notNull().default(""),
   notiz: text("notiz").notNull().default(""),
+  // Zeiten am Act (Showtime = verknüpfter Line-up-Eintrag). Get-in & Soundcheck als 'HH:MM'.
+  getIn: text("getIn").notNull().default(""),
+  soundcheck: text("soundcheck").notNull().default(""),
   createdBy: integer("createdBy").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });

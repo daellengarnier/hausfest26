@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import { requireUser, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
-import { acts, actFiles } from "@/lib/db/schema";
+import { acts, actFiles, scheduleEntries } from "@/lib/db/schema";
 import { syncActExpense } from "@/lib/actExpense";
+import { syncActSchedule } from "@/lib/actSchedule";
 
 const TYPEN = ["band", "dj", "andere"];
 const RUBRIKEN = ["techrider", "hospitality", "sonstiges"];
@@ -13,6 +14,10 @@ const toCents = (v: unknown): number | null => {
 const toCount = (v: unknown): number | null => {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+};
+const toMin = (v: unknown): number | undefined => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= 960 ? Math.round(n) : undefined;
 };
 
 export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -34,6 +39,8 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   if (body?.anzahlPersonen !== undefined) patch.anzahlPersonen = toCount(body.anzahlPersonen);
   if (body?.promotext !== undefined) patch.promotext = String(body.promotext ?? "").trim();
   if (body?.notiz !== undefined) patch.notiz = String(body.notiz ?? "").trim();
+  if (body?.getIn !== undefined) patch.getIn = String(body.getIn ?? "").trim();
+  if (body?.soundcheck !== undefined) patch.soundcheck = String(body.soundcheck ?? "").trim();
   if (Object.keys(patch).length > 0) await db.update(acts).set(patch).where(eq(acts.id, actId));
 
   // Dateien ersetzen, falls mitgeschickt: [{ attachmentId, rubrik }]
@@ -53,6 +60,8 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   const finalName = patch.name ?? act.name;
   const finalKosten = patch.kostenCents !== undefined ? patch.kostenCents : act.kostenCents;
   await syncActExpense(actId, finalName, finalKosten);
+  // Showtime (Floor + Von/Bis) → Line-up-Eintrag synchron halten.
+  await syncActSchedule(actId, finalName, body?.floor !== undefined ? String(body.floor) : undefined, toMin(body?.startMin), toMin(body?.endMin));
   return Response.json({ ok: true });
 }
 
@@ -63,7 +72,9 @@ export async function DELETE(_request: Request, ctx: { params: Promise<{ id: str
   const db = getDb();
   const rows = await db.select({ id: acts.id }).from(acts).where(eq(acts.id, Number(id))).limit(1);
   if (!rows[0]) return Response.json({ error: "Nicht gefunden" }, { status: 404 });
-  // Cascade entfernt act_files & den „Gagen"-Budgetposten; Line-up-Slot bleibt (actId → null).
+  // Acts ist die Quelle: verknüpften Line-up-Eintrag ebenfalls entfernen.
+  await db.delete(scheduleEntries).where(eq(scheduleEntries.actId, Number(id)));
+  // Cascade entfernt act_files & den „Gagen"-Budgetposten.
   await db.delete(acts).where(eq(acts.id, Number(id)));
   return Response.json({ ok: true });
 }

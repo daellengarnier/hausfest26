@@ -45,6 +45,10 @@ export default function WelcomePage() {
       .catch((e) => setError((e as Error).message));
   }, []);
 
+  // Programmübersicht ist kein Ressort, sondern der Programm-Einstieg (oben, eigener Look).
+  const programm = (ressorts ?? []).find((r) => r.hatZeitplan) ?? null;
+  const normalRessorts = (ressorts ?? []).filter((r) => !r.hatZeitplan);
+
   return (
     <div className="space-y-4">
       {/* Begrüssung + Links – ohne Box, direkt auf dem Hintergrund */}
@@ -88,17 +92,38 @@ export default function WelcomePage() {
         </p>
       </div>
 
+      {/* Programm-Einstieg – kein Ressort, eigener Look */}
+      {programm && (
+        <Link
+          href={`/ressort/${programm.id}`}
+          className="card flex items-center gap-3.5 overflow-hidden p-4"
+          style={{ backgroundImage: `linear-gradient(135deg, ${programm.farbe}1f, transparent 70%)` }}
+        >
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-white" style={{ background: programm.farbe }}>
+            <Icon name="music" size={24} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="lbl" style={{ color: programm.farbe }}>
+              Programm
+            </p>
+            <p className="text-lg font-extrabold leading-tight text-ink">Programmübersicht</p>
+            <p className="mt-0.5 text-xs text-stone-500">Line-up & Öffnungszeiten Bars</p>
+          </div>
+          <Icon name="chevron" size={18} className="shrink-0 text-stone-300" />
+        </Link>
+      )}
+
       {/* Ressorts – kompakt */}
       <div>
         <h2 className="lbl mb-2 px-1">Ressorts</h2>
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         {!ressorts ? (
           <Spinner label="Lade Ressorts …" />
-        ) : ressorts.length === 0 ? (
+        ) : normalRessorts.length === 0 ? (
           <EmptyState title="Noch keine Ressorts" hint={user?.rolle === "admin" ? "Lege im Admin-Bereich Ressorts an." : "Der Admin legt die Ressorts an."} />
         ) : (
           <div className="card divide-y divide-stone-100 overflow-hidden">
-            {ressorts.map((r) => (
+            {normalRessorts.map((r) => (
               <Link key={r.id} href={`/ressort/${r.id}`} className="flex items-center gap-3 px-3 py-2.5 active:bg-stone-50">
                 <span
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 ring-inset"

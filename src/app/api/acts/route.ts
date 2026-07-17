@@ -1,8 +1,9 @@
-import { eq, asc, inArray } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { requireUser, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
-import { acts, actFiles, attachments, scheduleEntries, users, ressorts } from "@/lib/db/schema";
+import { acts, actFiles, attachments, scheduleEntries, scheduleFloors, users, ressorts } from "@/lib/db/schema";
 import { syncActExpense } from "@/lib/actExpense";
+import { syncActSchedule } from "@/lib/actSchedule";
 
 const TYPEN = ["band", "dj", "andere"];
 const normTyp = (v: unknown) => (TYPEN.includes(String(v)) ? String(v) : "band");
@@ -14,6 +15,22 @@ const toCount = (v: unknown): number | null => {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
 };
+const toMin = (v: unknown): number | undefined => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= 960 ? Math.round(n) : undefined;
+};
+
+// Programm-Floors (für Auswahl & Gruppierung in Acts).
+async function programmFloors() {
+  const db = getDb();
+  const zp = await db.select({ id: ressorts.id }).from(ressorts).where(eq(ressorts.hatZeitplan, true)).limit(1);
+  if (!zp[0]) return [];
+  return db
+    .select({ name: scheduleFloors.name, farbe: scheduleFloors.farbe })
+    .from(scheduleFloors)
+    .where(and(eq(scheduleFloors.ressortId, zp[0].id), eq(scheduleFloors.board, "programm")))
+    .orderBy(asc(scheduleFloors.reihenfolge), asc(scheduleFloors.id));
+}
 
 // Alle Acts eines Ressorts inkl. Dateien (nach Rubrik) und verknüpftem Line-up-Slot.
 export async function GET(request: Request) {
@@ -33,6 +50,8 @@ export async function GET(request: Request) {
       anzahlPersonen: acts.anzahlPersonen,
       promotext: acts.promotext,
       notiz: acts.notiz,
+      getIn: acts.getIn,
+      soundcheck: acts.soundcheck,
       createdAt: acts.createdAt,
       createdByName: users.name,
     })
@@ -71,7 +90,7 @@ export async function GET(request: Request) {
   }
 
   const list = rows.map((r) => ({ ...r, files: filesByAct.get(r.id) ?? [], slot: slotByAct.get(r.id) ?? null }));
-  return Response.json({ acts: list });
+  return Response.json({ acts: list, floors: await programmFloors() });
 }
 
 export async function POST(request: Request) {
@@ -97,9 +116,13 @@ export async function POST(request: Request) {
       anzahlPersonen: toCount(body?.anzahlPersonen),
       promotext: String(body?.promotext ?? "").trim(),
       notiz: String(body?.notiz ?? "").trim(),
+      getIn: String(body?.getIn ?? "").trim(),
+      soundcheck: String(body?.soundcheck ?? "").trim(),
       createdBy: auth.id,
     })
     .returning({ id: acts.id });
   await syncActExpense(inserted[0].id, name, kostenCents);
+  // Showtime (Floor + Von/Bis) → Line-up-Eintrag.
+  await syncActSchedule(inserted[0].id, name, body?.floor !== undefined ? String(body.floor) : undefined, toMin(body?.startMin), toMin(body?.endMin));
   return Response.json({ id: inserted[0].id }, { status: 201 });
 }

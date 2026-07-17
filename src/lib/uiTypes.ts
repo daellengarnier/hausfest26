@@ -115,6 +115,8 @@ export interface Act {
   anzahlPersonen: number | null;
   promotext: string;
   notiz: string;
+  getIn: string;
+  soundcheck: string;
   createdAt: string;
   createdByName: string | null;
   files: ActFile[];
