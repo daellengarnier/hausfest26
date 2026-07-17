@@ -75,7 +75,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center justify-between px-4 py-2.5">
           <Link href="/" className="flex items-center gap-2.5">
             <span className="brand-gradient grid h-9 w-9 place-items-center rounded-2xl text-white shadow-[var(--shadow-pop)]">
-              <Icon name="leaf" size={18} />
+              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+                <path d="M12 5 19 18 H5 Z" fill="currentColor" />
+              </svg>
             </span>
             <span className="text-lg font-extrabold tracking-tight text-ink">
               Hausfest <span className="brand-text">26</span>
@@ -120,7 +122,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <span className={`relative grid h-7 w-14 place-items-center rounded-full transition-colors ${isActive ? "bg-accent/10 text-accent" : "text-stone-400"}`}>
                   <Icon name={t.icon} size={21} />
                   {t.badge && unread > 0 && (
-                    <span className="absolute right-2.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white ring-2 ring-[#f3eee1]">
+                    <span className="absolute right-2.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white ring-2 ring-[#e7eed9]">
                       {unread > 99 ? "99+" : unread}
                     </span>
                   )}

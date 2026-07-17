@@ -46,32 +46,34 @@ export default function WelcomePage() {
         <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ink">
           Hausfest <span className="brand-text">2026</span>
         </h1>
-        <p className="mt-0.5 text-sm text-stone-500">33 Jahre ViA · 10 Jahre Spinnerei</p>
+        <p className="mt-0.5 text-sm text-stone-500">33 Jahre Via · 10 Jahre Spinnerei</p>
 
         {/* Dezente Links */}
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-stone-100 pt-3 text-sm">
-          <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-medium text-accent-dark">
-            <Icon name="ticket" size={16} /> Tickets <Icon name="external" size={13} className="text-stone-400" />
-          </a>
-          <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-medium text-accent-dark">
+        <div className="mt-3 space-y-1.5 border-t border-stone-100 pt-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-accent-dark">
+              <Icon name="ticket" size={16} /> Tickets <Icon name="external" size={13} className="text-stone-400" />
+            </a>
+            <span className="text-stone-500">
+              (Passwort:{" "}
+              <button
+                onClick={() =>
+                  navigator.clipboard?.writeText(TICKET_PASSWORD).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1400);
+                  })
+                }
+                className="font-mono font-bold text-accent-dark underline decoration-dotted underline-offset-2"
+              >
+                {TICKET_PASSWORD}
+              </button>
+              {copied ? <span className="ml-1 text-accent">kopiert</span> : <span className="text-stone-400"> · tippen zum Kopieren</span>})
+            </span>
+          </div>
+          <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-accent-dark">
             <Icon name="calendar" size={16} /> Schichtplan <Icon name="external" size={13} className="text-stone-400" />
           </a>
         </div>
-        <p className="mt-1.5 text-xs text-stone-400">
-          Ticket-Passwort:{" "}
-          <button
-            onClick={() =>
-              navigator.clipboard?.writeText(TICKET_PASSWORD).then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1400);
-              })
-            }
-            className="font-mono font-semibold text-stone-600 underline decoration-dotted underline-offset-2"
-          >
-            {TICKET_PASSWORD}
-          </button>
-          {copied && <span className="ml-1 text-accent">kopiert</span>}
-        </p>
       </div>
 
       {/* Ressorts – kompakt */}

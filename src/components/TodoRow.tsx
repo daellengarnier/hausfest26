@@ -5,14 +5,8 @@ import Link from "next/link";
 import { api } from "@/lib/apiClient";
 import { AvatarStack, Modal } from "./Ui";
 import { Icon } from "./Icon";
-import { STATUS_CLASSES, STATUS_LABEL, formatDate, isOverdue } from "@/lib/uiUtil";
+import { formatDate, isOverdue } from "@/lib/uiUtil";
 import type { Todo, TodoStatus } from "@/lib/uiTypes";
-
-const NEXT: Record<TodoStatus, TodoStatus> = {
-  offen: "in_arbeit",
-  in_arbeit: "erledigt",
-  erledigt: "offen",
-};
 
 export function TodoRow({
   todo,
@@ -47,11 +41,6 @@ export function TodoRow({
     e.stopPropagation();
     update(status === "erledigt" ? "offen" : "erledigt");
   };
-  const cycleStatus = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    update(NEXT[status]);
-  };
   const askDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -83,21 +72,20 @@ export function TodoRow({
           <p className={`truncate text-sm font-medium ${done ? "text-slate-400 line-through" : "text-slate-800"}`}>
             {todo.titel}
           </p>
-          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
-            <button onClick={cycleStatus} className={`chip ${STATUS_CLASSES[status]}`}>
-              {STATUS_LABEL[status]}
-            </button>
-            {todo.fristDatum && (
-              <span className={`chip ${overdue ? "bg-red-100 text-red-700" : "bg-stone-100 text-stone-500"}`}>
-                <Icon name="calendar" size={12} /> {formatDate(todo.fristDatum)}
-              </span>
-            )}
-            {!!todo.commentCount && (
-              <span className="inline-flex items-center gap-1 text-stone-400">
-                <Icon name="chat" size={13} /> {todo.commentCount}
-              </span>
-            )}
-          </div>
+          {(todo.fristDatum || !!todo.commentCount) && (
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
+              {todo.fristDatum && (
+                <span className={`chip ${overdue ? "bg-red-100 text-red-700" : "bg-stone-100 text-stone-500"}`}>
+                  <Icon name="calendar" size={12} /> {formatDate(todo.fristDatum)}
+                </span>
+              )}
+              {!!todo.commentCount && (
+                <span className="inline-flex items-center gap-1 text-stone-400">
+                  <Icon name="chat" size={13} /> {todo.commentCount}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <AvatarStack users={todo.assignees ?? []} size={24} />

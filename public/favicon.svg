@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#35603c"/>
-  <text x="32" y="33" font-family="ui-rounded, 'Segoe UI', Arial, sans-serif" font-size="21" font-weight="800" letter-spacing="-1.2" fill="#f3eee1" text-anchor="middle" dominant-baseline="central">HF26</text>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5a9a63"/>
+      <stop offset="1" stop-color="#2f5533"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#g)"/>
+  <path d="M32 15 L50 47 H14 Z" fill="#f3eee1"/>
 </svg>

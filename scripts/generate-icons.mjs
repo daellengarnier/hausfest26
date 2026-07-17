@@ -74,26 +74,16 @@ function makeIcon(size, { maskable = false } = {}) {
       px[i + 3] = a;
     }
   }
-  // „HF"-Monogramm aus Rechtecken.
-  const rect = (rx, ry, rw, rh) => {
-    for (let y = Math.round(ry); y < Math.round(ry + rh); y++) for (let x = Math.round(rx); x < Math.round(rx + rw); x++) set(x, y, CREAM);
-  };
-  const Lh = size * 0.42;
-  const Lw = size * 0.24;
-  const t = Math.max(2, size * 0.062);
-  const gap = size * 0.08;
-  const totalW = 2 * Lw + gap;
-  const x0 = (size - totalW) / 2;
-  const y0 = (size - Lh) / 2;
-  // H
-  rect(x0, y0, t, Lh);
-  rect(x0 + Lw - t, y0, t, Lh);
-  rect(x0, y0 + (Lh - t) / 2, Lw, t);
-  // F
-  const xF = x0 + Lw + gap;
-  rect(xF, y0, t, Lh);
-  rect(xF, y0, Lw, t);
-  rect(xF, y0 + (Lh - t) / 2, Lw * 0.82, t);
+  // Stehendes Dreieck (Spitze oben) in Creme.
+  const yTop = size * 0.24;
+  const yBot = size * 0.75;
+  const halfBase = size * 0.3;
+  const cx = size / 2;
+  for (let y = Math.round(yTop); y <= Math.round(yBot); y++) {
+    const f = (y - yTop) / (yBot - yTop); // 0 an der Spitze, 1 an der Basis
+    const hw = halfBase * f;
+    for (let x = Math.round(cx - hw); x <= Math.round(cx + hw); x++) set(x, y, CREAM);
+  }
 
   return encodePNG(size, px);
 }

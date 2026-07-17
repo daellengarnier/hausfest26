@@ -27,8 +27,16 @@ export default function RessortPage() {
   const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | "bars" | null>(null);
   const [error, setError] = useState("");
   const [todoModal, setTodoModal] = useState<{ open: boolean; subId: number | null }>({ open: false, subId: null });
+  const [createSeq, setCreateSeq] = useState(0); // erzwingt frisches Todo-Formular bei jedem Öffnen
   const [subModalOpen, setSubModalOpen] = useState(false);
+  const [editSub, setEditSub] = useState<SubRessort | null>(null);
+  const [deleteSub, setDeleteSub] = useState<SubRessort | null>(null);
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
+
+  const openTodo = (subId: number | null) => {
+    setCreateSeq((s) => s + 1);
+    setTodoModal({ open: true, subId });
+  };
 
   const load = useCallback(() => {
     api.get<DetailResponse>(`/ressorts/${ressortId}`).then(setData).catch((e) => setError((e as Error).message));
@@ -95,7 +103,7 @@ export default function RessortPage() {
       ) : activeTab === "todos" ? (
         <div className="space-y-4">
           <div className="flex gap-2">
-            <button className="btn-primary flex-1" onClick={() => setTodoModal({ open: true, subId: null })}>
+            <button className="btn-primary flex-1" onClick={() => openTodo(null)}>
               + Todo
             </button>
             <button className="btn-ghost" onClick={() => setSubModalOpen(true)}>
@@ -121,26 +129,36 @@ export default function RessortPage() {
             const open = subTodos.filter((t) => t.status !== "erledigt").length;
             return (
               <div key={sub.id} className="card overflow-hidden">
-                <button
-                  className="flex w-full items-center justify-between px-4 py-3 text-left"
-                  onClick={() => setCollapsed((c) => ({ ...c, [sub.id]: !c[sub.id] }))}
-                >
-                  <span className="flex items-center gap-2 font-semibold">
-                    <span className="text-slate-400">{isCollapsed ? "▸" : "▾"}</span>
-                    {sub.name}
-                  </span>
-                  <span className="chip bg-slate-100 text-slate-500">{open} offen</span>
-                </button>
+                <div className="flex items-center gap-1 px-3 py-2.5">
+                  <button
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    onClick={() => setCollapsed((c) => ({ ...c, [sub.id]: !c[sub.id] }))}
+                  >
+                    <Icon name="chevron" size={16} className={`shrink-0 text-stone-400 transition-transform ${isCollapsed ? "" : "rotate-90"}`} />
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold">{sub.name}</span>
+                      {sub.beschreibung && <span className="block truncate text-xs text-stone-500">{sub.beschreibung}</span>}
+                    </span>
+                  </button>
+                  <span className="chip shrink-0 bg-stone-100 text-stone-500">{open} offen</span>
+                  <button onClick={() => setEditSub(sub)} className="shrink-0 rounded-lg p-1.5 text-stone-300 hover:bg-stone-100 hover:text-accent" aria-label="Bearbeiten">
+                    <Icon name="pencil" size={16} />
+                  </button>
+                  <button onClick={() => setDeleteSub(sub)} className="shrink-0 rounded-lg p-1.5 text-stone-300 hover:bg-red-50 hover:text-red-500" aria-label="Löschen">
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
                 {!isCollapsed && (
-                  <div className="divide-y divide-slate-100 border-t border-slate-100">
+                  <div className="divide-y divide-stone-100 border-t border-stone-100">
+                    {sub.beschreibung && <p className="whitespace-pre-wrap px-4 py-2.5 text-sm text-stone-600">{sub.beschreibung}</p>}
                     {subTodos.length === 0 ? (
-                      <p className="px-4 py-3 text-sm text-slate-400">Noch keine Todos in diesem Sub-Ressort.</p>
+                      <p className="px-4 py-3 text-sm text-stone-400">Noch keine Todos hier.</p>
                     ) : (
                       subTodos.map((t) => <TodoRow key={t.id} todo={t} onChanged={load} onDeleted={load} />)
                     )}
                     <button
-                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-accent hover:bg-slate-50"
-                      onClick={() => setTodoModal({ open: true, subId: sub.id })}
+                      className="w-full px-4 py-2.5 text-left text-sm font-semibold text-accent hover:bg-stone-50"
+                      onClick={() => openTodo(sub.id)}
                     >
                       + Todo hier
                     </button>
@@ -171,6 +189,7 @@ export default function RessortPage() {
       )}
 
       <TodoFormModal
+        key={createSeq}
         open={todoModal.open}
         onClose={() => setTodoModal({ open: false, subId: null })}
         ressortId={ressortId}
@@ -179,6 +198,44 @@ export default function RessortPage() {
         onSaved={load}
       />
       <SubRessortModal open={subModalOpen} onClose={() => setSubModalOpen(false)} ressortId={ressortId} onSaved={load} />
+      {editSub && (
+        <SubRessortModal
+          open
+          sub={editSub}
+          onClose={() => setEditSub(null)}
+          ressortId={ressortId}
+          onSaved={() => {
+            setEditSub(null);
+            load();
+          }}
+        />
+      )}
+      {deleteSub && (
+        <Modal
+          open
+          onClose={() => setDeleteSub(null)}
+          title={`Sub-Ressort „${deleteSub.name}" löschen?`}
+          footer={
+            <div className="flex gap-2">
+              <button className="btn-ghost flex-1" onClick={() => setDeleteSub(null)}>
+                Abbrechen
+              </button>
+              <button
+                className="btn-danger flex-1"
+                onClick={async () => {
+                  await api.del(`/ressorts/sub-ressorts/${deleteSub.id}`);
+                  setDeleteSub(null);
+                  load();
+                }}
+              >
+                Löschen
+              </button>
+            </div>
+          }
+        >
+          <p className="text-sm text-stone-600">Die Todos dieses Sub-Ressorts bleiben im Ressort erhalten (ohne Zuordnung).</p>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -187,24 +244,31 @@ function SubRessortModal({
   open,
   onClose,
   ressortId,
+  sub,
   onSaved,
 }: {
   open: boolean;
   onClose: () => void;
   ressortId: number;
+  sub?: SubRessort | null;
   onSaved: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [beschreibung, setBeschreibung] = useState("");
+  const editing = !!sub;
+  const [name, setName] = useState(sub?.name ?? "");
+  const [beschreibung, setBeschreibung] = useState(sub?.beschreibung ?? "");
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await api.post(`/ressorts/${ressortId}/sub-ressorts`, { name: name.trim(), beschreibung });
-      setName("");
-      setBeschreibung("");
+      if (editing) {
+        await api.patch(`/ressorts/sub-ressorts/${sub!.id}`, { name: name.trim(), beschreibung });
+      } else {
+        await api.post(`/ressorts/${ressortId}/sub-ressorts`, { name: name.trim(), beschreibung });
+        setName("");
+        setBeschreibung("");
+      }
       onSaved();
       onClose();
     } finally {
@@ -216,14 +280,14 @@ function SubRessortModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Neues Sub-Ressort"
+      title={editing ? "Sub-Ressort bearbeiten" : "Neues Sub-Ressort"}
       footer={
         <div className="flex gap-2">
           <button className="btn-ghost flex-1" onClick={onClose}>
             Abbrechen
           </button>
           <button className="btn-primary flex-1" onClick={save} disabled={saving}>
-            Anlegen
+            {editing ? "Speichern" : "Anlegen"}
           </button>
         </div>
       }
