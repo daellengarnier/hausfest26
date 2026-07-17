@@ -107,18 +107,20 @@ export default function WelcomePage() {
                   <Icon name={ressortIcon(r.name)} size={19} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-ink">{r.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="min-w-0 truncate font-semibold text-ink">{r.name}</p>
+                    {r.leads.length > 0 && (
+                      <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-stone-400">
+                        {r.leads.map((l) => (
+                          <span key={l.id} className="inline-flex items-center gap-1">
+                            <Avatar name={l.name} color={l.avatarColor} size={14} userId={l.id} showName={false} />
+                            {l.name}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </div>
                   {ressortHint(r) && <p className="truncate text-xs text-stone-400">{ressortHint(r)}</p>}
-                  {r.leads.length > 0 && (
-                    <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-stone-400">
-                      {r.leads.map((l) => (
-                        <span key={l.id} className="inline-flex items-center gap-1">
-                          <Avatar name={l.name} color={l.avatarColor} size={14} userId={l.id} showName={false} />
-                          {l.name}
-                        </span>
-                      ))}
-                    </p>
-                  )}
                 </div>
                 {r.openTodos > 0 && (
                   <span className="chip shrink-0" style={{ background: `${r.farbe}1c`, color: r.farbe }}>
