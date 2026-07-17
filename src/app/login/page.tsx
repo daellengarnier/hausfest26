@@ -31,10 +31,10 @@ export default function LoginPage() {
     <div className="auth-bg flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center text-white">
-          <div className="mx-auto mb-4 grid h-[68px] w-[68px] place-items-center rounded-[22px] bg-white/10 shadow-2xl ring-1 ring-white/25 backdrop-blur">
-            <span className="grid h-10 w-10 place-items-center rounded-full border-[3px] border-white">
-              <span className="h-3 w-3 rounded-full bg-terra-light" />
-            </span>
+          <div className="mx-auto mb-4 grid h-[70px] w-[70px] place-items-center rounded-[22px] bg-white/10 shadow-2xl ring-1 ring-white/25 backdrop-blur">
+            <svg viewBox="0 0 64 64" width="40" height="40" aria-hidden="true">
+              <path d="M32 10 55 52 H9 Z" fill="#f3eee1" />
+            </svg>
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight">Hausfest 26</h1>
           <p className="mt-1.5 text-white/75">Orga der Spinnerei</p>

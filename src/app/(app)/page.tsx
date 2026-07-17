@@ -73,7 +73,7 @@ export default function WelcomePage() {
 
       {/* Ressorts – kompakt */}
       <div>
-        <h2 className="mb-2 px-1 text-sm font-bold uppercase tracking-wide text-stone-500">Ressorts</h2>
+        <h2 className="lbl mb-2 px-1">Ressorts</h2>
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         {!ressorts ? (
           <Spinner label="Lade Ressorts …" />

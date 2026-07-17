@@ -73,7 +73,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
     <div className="space-y-4">
       {/* Kosten-Übersicht */}
       <div className="card overflow-hidden">
-        <div className="brand-gradient px-5 py-4 text-white">
+        <div className="hero-gradient px-5 py-4 text-white">
           <p className="text-xs font-semibold uppercase tracking-wide text-white/80">Kosten-Übersicht</p>
           <div className="mt-1 flex items-end justify-between gap-3">
             <div>
@@ -118,7 +118,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
       ) : (
         <>
           <div>
-            <h3 className="mb-2 px-1 text-sm font-bold text-stone-500">Kostenstellen</h3>
+            <h3 className="lbl mb-2 px-1">Kostenstellen</h3>
             <div className="space-y-2">
               {kostenstellen.map((k) => {
                 const color = CATEGORY_COLOR[k.kategorie] ?? "#8a8172";
@@ -134,7 +134,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
                         <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-semibold text-ink">{k.kategorie}</span>
-                          <span className="mt-1 block h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+                          <span className="mt-1 block h-1.5 w-full overflow-hidden rounded-full" style={{ background: "#efe7d8" }}>
                             <span className="block h-full rounded-full" style={{ width: `${width}%`, background: over || noPlan ? "#c2453d" : color }} />
                           </span>
                         </span>
@@ -183,7 +183,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
 
           {byUser.length > 1 && (
             <div className="card p-4">
-              <h3 className="mb-2 text-sm font-bold text-stone-500">Ausgelegt nach Person</h3>
+              <h3 className="lbl mb-2">Ausgelegt nach Person</h3>
               <div className="space-y-2">
                 {byUser.map((u) => (
                   <div key={u.name} className="flex items-center gap-2 text-sm">

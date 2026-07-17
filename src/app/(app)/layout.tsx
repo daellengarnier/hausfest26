@@ -109,32 +109,32 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col">
-      <header className="pt-safe glass sticky top-0 z-30 border-b">
-        <div className="flex items-center justify-between px-4 py-2.5">
+      <header className="pt-safe brand-header sticky top-0 z-30">
+        <div className="flex items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="brand-gradient grid h-9 w-9 place-items-center rounded-2xl text-white shadow-[var(--shadow-pop)]">
+            <span className="grid h-9 w-9 place-items-center rounded-[13px] text-white ring-1 ring-white/40" style={{ background: "rgba(255,255,255,0.16)" }}>
               <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
                 <path d="M12 3 21 20 H3 Z" fill="currentColor" />
               </svg>
             </span>
             <span className="flex flex-col leading-none">
-              <span className="text-lg font-extrabold tracking-tight text-ink">
-                Hausfest <span className="brand-text">26</span>
+              <span className="text-lg font-extrabold tracking-tight text-white">
+                Hausfest <span className="text-white/95">26</span>
               </span>
-              <span className="mt-0.5 text-[10px] font-medium text-stone-500">33 Jahre Via · 10 Jahre Spinnerei</span>
+              <span className="mt-0.5 text-[10px] font-semibold text-white/75">33 Jahre Via · 10 Jahre Spinnerei</span>
             </span>
           </Link>
           <div className="flex items-center gap-1">
-            <Link href="/inbox" className="relative grid h-10 w-10 place-items-center rounded-full text-stone-500 active:scale-95" aria-label="Benachrichtigungen">
+            <Link href="/inbox" className="relative grid h-10 w-10 place-items-center rounded-full text-white/90 active:scale-95" aria-label="Benachrichtigungen">
               <Icon name="bell" size={22} />
               {unread > 0 && (
-                <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white ring-2 ring-[#e7eed9]">
+                <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white ring-2 ring-accent">
                   {unread > 99 ? "99+" : unread}
                 </span>
               )}
             </Link>
             <div className="relative" ref={menuRef}>
-            <button onClick={() => setMenuOpen((o) => !o)} className="relative flex items-center gap-2 rounded-full p-0.5 active:scale-95">
+            <button onClick={() => setMenuOpen((o) => !o)} className="relative flex items-center gap-2 rounded-full ring-2 ring-white/70 active:scale-95">
               <Avatar name={user.name} color={user.avatarColor} size={34} userId={user.id} showName={false} />
             </button>
             {menuOpen && (
@@ -185,21 +185,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <nav className="pb-safe glass fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl border-t">
-        <div className="grid grid-cols-3">
+      <nav className="pb-safe tabbar fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl">
+        <div className="grid grid-cols-3 px-2 pt-1.5">
           {TABS.map((t) => {
             const isActive = t.exact ? pathname === t.href : pathname.startsWith(t.href);
             return (
-              <Link key={t.href} href={t.href} className="relative flex flex-col items-center gap-0.5 py-1.5 text-[11px] font-semibold">
-                <span className={`relative grid h-7 w-14 place-items-center rounded-full transition-colors ${isActive ? "bg-accent/10 text-accent" : "text-stone-400"}`}>
+              <Link key={t.href} href={t.href} className={`relative flex flex-col items-center gap-0.5 py-1 text-[10px] font-extrabold ${isActive ? "text-white" : "text-white/60"}`}>
+                <span className={`relative grid h-7 w-[58px] place-items-center rounded-full transition-colors ${isActive ? "bg-white/[0.18] text-white" : "text-white/70"}`}>
                   <Icon name={t.icon} size={21} />
                   {t.badge && unread > 0 && (
-                    <span className="absolute right-2.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white ring-2 ring-[#e7eed9]">
+                    <span className="absolute right-2 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white ring-2 ring-[#2d4a2c]">
                       {unread > 99 ? "99+" : unread}
                     </span>
                   )}
                 </span>
-                <span className={isActive ? "text-accent-dark" : "text-stone-500"}>{t.label}</span>
+                {t.label}
               </Link>
             );
           })}

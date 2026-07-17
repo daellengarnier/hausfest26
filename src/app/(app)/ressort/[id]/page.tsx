@@ -85,33 +85,33 @@ export default function RessortPage() {
         </div>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto rounded-xl bg-slate-200/70 p-1 text-sm font-medium">
+      <div className="seg overflow-x-auto">
         {ressort.hatActs && (
-          <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "acts" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("acts")}>
+          <button className={`seg-item whitespace-nowrap px-3 ${activeTab === "acts" ? "on" : ""}`} onClick={() => setTab("acts")}>
             Acts
           </button>
         )}
         {ressort.hatFinanzen && (
-          <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "finanzen" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("finanzen")}>
+          <button className={`seg-item whitespace-nowrap px-3 ${activeTab === "finanzen" ? "on" : ""}`} onClick={() => setTab("finanzen")}>
             Ausgaben
           </button>
         )}
         {ressort.hatZeitplan && (
           <>
-            <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "zeitplan" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("zeitplan")}>
+            <button className={`seg-item whitespace-nowrap px-3 ${activeTab === "zeitplan" ? "on" : ""}`} onClick={() => setTab("zeitplan")}>
               Line-up
             </button>
-            <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "bars" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("bars")}>
+            <button className={`seg-item whitespace-nowrap px-3 ${activeTab === "bars" ? "on" : ""}`} onClick={() => setTab("bars")}>
               Öffnungszeiten Bars
             </button>
           </>
         )}
         {!spezial && (
           <>
-            <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "todos" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("todos")}>
-              Todos {openTodoCount > 0 && <span className="text-slate-400">({openTodoCount})</span>}
+            <button className={`seg-item whitespace-nowrap px-3 ${activeTab === "todos" ? "on" : ""}`} onClick={() => setTab("todos")}>
+              Todos {openTodoCount > 0 && <span className="opacity-60">({openTodoCount})</span>}
             </button>
-            <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "pinnwand" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("pinnwand")}>
+            <button className={`seg-item whitespace-nowrap px-3 ${activeTab === "pinnwand" ? "on" : ""}`} onClick={() => setTab("pinnwand")}>
               Pinnwand
             </button>
           </>
