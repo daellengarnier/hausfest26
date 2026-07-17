@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hausfest 26 — Aktueller Stand (Design-Mockup)</title>
+<style>
+  :root{
+    --accent:#4b7f52; --accent-dark:#35603c; --accent-light:#cfe0cf;
+    --terra:#c2703d; --ink:#2c261d; --mute:#857c6b;
+    --grad:linear-gradient(135deg,#6aa86f 0%,#4b7f52 55%,#35603c 100%);
+    --soft:0 1px 2px rgba(60,46,24,.05),0 14px 30px -16px rgba(60,46,24,.22);
+    --pop:0 10px 26px -12px rgba(75,127,82,.55);
+    --font:ui-rounded,"Segoe UI Rounded",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:var(--font);color:var(--ink);
+    background-color:#e7eed9;
+    background-image:
+      radial-gradient(40rem 34rem at 6% -4%,rgba(75,127,82,.22),transparent 60%),
+      radial-gradient(34rem 30rem at 104% 4%,rgba(122,143,63,.18),transparent 58%),
+      radial-gradient(34rem 34rem at 55% 108%,rgba(53,96,60,.16),transparent 62%),
+      linear-gradient(180deg,#edf2e2 0%,#e3ebd3 100%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1200px;margin:0 auto;padding:32px 20px 60px}
+  .head h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:0}
+  .brand{background:linear-gradient(120deg,#5a9a63,#4b7f52 55%,#7a8f3f);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .head p{color:var(--mute);margin:6px 0 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:26px;margin-top:28px;align-items:start}
+  .screen-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:0 0 8px 6px}
+  /* Phone frame */
+  .phone{background:#e7eed9;background-image:linear-gradient(180deg,#edf2e2,#e3ebd3);border-radius:30px;padding:10px;box-shadow:var(--soft),0 0 0 2px rgba(53,96,60,.12);overflow:hidden}
+  .phone.dark{background:#33472f;background-image:radial-gradient(28rem 22rem at 6% -8%,rgba(122,168,96,.5),transparent 60%),radial-gradient(24rem 22rem at 106% 6%,rgba(194,112,61,.42),transparent 58%),linear-gradient(160deg,#3f5b39,#33472f 60%,#253521)}
+  .app{border-radius:22px;overflow:hidden;position:relative;min-height:560px;display:flex;flex-direction:column}
+  /* Header */
+  .hdr{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(231,238,217,.82);backdrop-filter:blur(12px);border-bottom:1px solid rgba(53,96,60,.12)}
+  .logo{display:flex;align-items:center;gap:10px}
+  .mark{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;color:#fff;background-image:var(--grad);box-shadow:var(--pop)}
+  .title{display:flex;flex-direction:column;line-height:1}
+  .title b{font-size:17px;font-weight:800;letter-spacing:-.02em}
+  .title small{font-size:10px;color:var(--mute);margin-top:2px}
+  .hdr-right{display:flex;align-items:center;gap:6px}
+  .iconbtn{position:relative;width:38px;height:38px;border-radius:999px;display:grid;place-items:center;color:var(--mute)}
+  .badge{position:absolute;top:5px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--terra);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px #e7eed9}
+  .av{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px}
+  /* Body */
+  .body{flex:1;padding:16px 14px 84px;display:flex;flex-direction:column;gap:14px}
+  .card{background:#fff;border-radius:18px;box-shadow:var(--soft);box-shadow:var(--soft),0 0 0 1px rgba(0,0,0,.04)}
+  .p14{padding:14px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer}
+  .btn-primary{color:#fff;background-image:var(--grad);box-shadow:var(--pop)}
+  .btn-ghost{background:#f1efe9;color:#5c554a;box-shadow:inset 0 0 0 1px #e4e1d8}
+  .row{display:flex;align-items:center;gap:12px}
+  .chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700}
+  .muted{color:var(--mute)}
+  .sub{font-size:12px;color:#9a9184}
+  .ico{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+  .ico.sm{width:16px;height:16px}
+  /* Tab bar */
+  .tabs{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0));background:rgba(231,238,217,.9);backdrop-filter:blur(12px);border-top:1px solid rgba(53,96,60,.12)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:11px;font-weight:700;color:#9a9184}
+  .tab .pill{width:56px;height:28px;border-radius:999px;display:grid;place-items:center}
+  .tab.active{color:var(--accent-dark)}
+  .tab.active .pill{background:rgba(75,127,82,.12);color:var(--accent)}
+  /* misc */
+  .list>*{border-top:1px solid #f0eee9}
+  .list>*:first-child{border-top:0}
+  .barbg{height:6px;border-radius:999px;background:#eee9e2;overflow:hidden}
+  .barfill{height:100%;border-radius:999px}
+  .grad-card{background-image:var(--grad);color:#fff;padding:16px}
+  input.fake{width:100%;border-radius:12px;border:1px solid #d6d2c8;background:#fff;padding:10px 12px;font-family:inherit;font-size:14px;color:var(--ink)}
+  .note{font-size:12px;color:var(--mute);text-align:center;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Hausfest <span class="brand">26</span> — aktueller Stand</h1>
+    <p>Statisches Mockup der wichtigsten Screens (warm-grünes Design-System). Ausgangsbasis für den Redesign in Claude – siehe DESIGN-BRIEF.md.</p>
+  </div>
+
+  <svg width="0" height="0" style="position:absolute"><defs>
+    <g id="i-home"><path d="M4 11.5 12 5l8 6.5M6 10v9h12v-9M10 19v-5h4v5"/></g>
+    <g id="i-tasks"><path d="M4 7h11M4 12h11M4 17h7M18.5 6l1.6 1.6L23 4.5"/></g>
+    <g id="i-bell"><path d="M6 16v-4a6 6 0 1 1 12 0v4l1.5 2h-15zM9.5 18a2.5 2.5 0 0 0 5 0"/></g>
+    <g id="i-cart"><path d="M4 5h2l2 10h9l2-7H7M9 19a1 1 0 1 0 0 .01M17 19a1 1 0 1 0 0 .01"/></g>
+    <g id="i-ticket"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v2a1.5 1.5 0 0 0 0 3v2A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-2a1.5 1.5 0 0 0 0-3zM12 7v13"/></g>
+    <g id="i-cal"><path d="M4 8h16M7 4v3M17 4v3M5 6h14v14H5zM8 12h3v3H8z"/></g>
+    <g id="i-music"><path d="M9 18V6l10-2v10M9 15a3 3 0 1 1-2-2.8M19 12a3 3 0 1 1-2-2.8"/></g>
+    <g id="i-food"><path d="M4 4v6a2 2 0 0 0 4 0V4M6 4v16M15 4c-1.5 1-2 3-2 5s1 3 2.5 3H16v8M16 4v9"/></g>
+    <g id="i-drink"><path d="M6 5h12l-2 8H8zM12 13v5M8.5 18h7M9 9h6"/></g>
+    <g id="i-coins"><path d="M9 8.5c0-1.4 2-2.5 4.5-2.5S18 7.1 18 8.5 16 11 13.5 11 9 9.9 9 8.5M9 8.5V15c0 1.4 2 2.5 4.5 2.5S18 16.4 18 15V8.5M6 11c-1.8.3-3 1.1-3 2 0 1.4 2 2.5 4.5 2.5.5 0 1 0 1.5-.1"/></g>
+    <g id="i-star"><path d="M12 4l2.3 4.8 5.2.7-3.8 3.6.9 5.1-4.6-2.5-4.6 2.5.9-5.1L4.5 9.5l5.2-.7z"/></g>
+    <g id="i-palette"><path d="M12 4a8 8 0 1 0 0 16c1.5 0 1.5-2 0-2s-1-2 .5-2H15a4 4 0 0 0 4-4c0-3.9-3.1-6-7-6M7.5 12h.01M10 8h.01M14 8h.01"/></g>
+    <g id="i-shield"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6zM9 12l2 2 4-4"/></g>
+    <g id="i-chev"><path d="M9 6l6 6-6 6"/></g>
+    <g id="i-plus"><path d="M12 5v14M5 12h14"/></g>
+    <g id="i-clock"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16M12 8v4.5l3 2"/></g>
+    <g id="i-check"><path d="M5 12.5 10 17l9-10"/></g>
+  </defs></svg>
+
+  <div class="grid">
+
+    <!-- LOGIN -->
+    <div>
+      <p class="screen-label">Login / Registrierung</p>
+      <div class="phone dark">
+        <div class="app" style="background:transparent;min-height:560px;justify-content:center;padding:26px 20px">
+          <div style="text-align:center;color:#fff;margin-bottom:22px">
+            <div style="width:66px;height:66px;border-radius:20px;margin:0 auto 14px;display:grid;place-items:center;background:rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.25)">
+              <svg width="40" height="40" viewBox="0 0 64 64"><path d="M32 9 L56 53 H8 Z" fill="#f3eee1"/></svg>
+            </div>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-.02em">Willkommen</div>
+            <div style="opacity:.75;margin-top:4px">Hausfest 26 · Orga der Spinnerei</div>
+          </div>
+          <div class="card p14" style="display:flex;flex-direction:column;gap:12px">
+            <div><div class="label sub" style="margin-bottom:4px;font-weight:600">Dein Name</div>
+              <div class="fake" style="display:flex;justify-content:space-between;color:var(--ink)">Reto <svg class="ico sm muted"><use href="#i-chev"/></svg></div></div>
+            <div><div class="label sub" style="margin-bottom:4px;font-weight:600">E-Mail</div><input class="fake" value="reto@email.ch"/></div>
+            <div><div class="label sub" style="margin-bottom:4px;font-weight:600">Passwort</div><input class="fake" value="••••••••"/></div>
+            <button class="btn btn-primary" style="width:100%;margin-top:4px">Registrieren</button>
+            <div class="sub" style="text-align:center">Schon ein Konto? <b style="color:var(--accent)">Anmelden</b></div>
+          </div>
+          <div class="card p14" style="margin-top:14px">
+            <b style="font-size:13px">App auf den Homebildschirm legen ▾</b>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÜBERSICHT -->
+    <div>
+      <p class="screen-label">Übersicht (Start)</p>
+      <div class="phone">
+        <div class="app">
+          <div class="hdr">
+            <div class="logo"><div class="mark"><svg width="19" height="19" viewBox="0 0 24 24"><path d="M12 3 21 20 H3 Z" fill="currentColor"/></svg></div>
+              <div class="title"><b>Hausfest <span class="brand">26</span></b><small>33 Jahre Via · 10 Jahre Spinnerei</small></div></div>
+            <div class="hdr-right">
+              <div class="iconbtn"><svg class="ico"><use href="#i-bell"/></svg><span class="badge">3</span></div>
+              <div class="av" style="background:#ec4899">DÄ</div>
+            </div>
+          </div>
+          <div class="body">
+            <div style="padding:0 2px">
+              <div style="font-size:24px;font-weight:800;letter-spacing:-.02em">Hallo, <span class="brand">Dällen</span></div>
+              <div class="row" style="gap:8px;margin-top:12px">
+                <button class="btn btn-primary" style="flex:1"><svg class="ico sm"><use href="#i-ticket"/></svg>Tickets</button>
+                <button class="btn btn-ghost" style="flex:1"><svg class="ico sm"><use href="#i-cal"/></svg>Schichtplan</button>
+              </div>
+              <div class="sub" style="margin-top:8px">Ticket-Passwort: <b style="color:var(--accent-dark);text-decoration:underline dotted">viaspinnerei</b></div>
+            </div>
+            <div>
+              <div class="screen-label" style="margin:6px 0 8px 2px">Ressorts</div>
+              <div class="card list">
+                <div class="row p14" style="padding:11px 12px"><span style="width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:#ec489920;color:#ec4899;box-shadow:inset 0 0 0 1px #ec489935"><svg class="ico"><use href="#i-music"/></svg></span><div style="flex:1"><b>Programmübersicht</b><div class="sub">Line-up & Öffnungszeiten Bars</div></div><svg class="ico sm muted"><use href="#i-chev"/></svg></div>
+                <div class="row p14" style="padding:11px 12px"><span style="width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:#d6409f20;color:#d6409f;box-shadow:inset 0 0 0 1px #d6409f35"><svg class="ico"><use href="#i-star"/></svg></span><div style="flex:1"><b>Acts</b><div class="sub">Bands & DJs · Rider, Gagen</div></div><svg class="ico sm muted"><use href="#i-chev"/></svg></div>
+                <div class="row p14" style="padding:11px 12px"><span style="width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:#f9731620;color:#c2703d;box-shadow:inset 0 0 0 1px #f9731635"><svg class="ico"><use href="#i-food"/></svg></span><div style="flex:1"><b>Essen</b><div class="sub">Menü, Abendessen & Küche</div></div><span class="chip" style="background:#f9731618;color:#c2703d">2</span></div>
+                <div class="row p14" style="padding:11px 12px"><span style="width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:#06b6d420;color:#0e8ba3;box-shadow:inset 0 0 0 1px #06b6d435"><svg class="ico"><use href="#i-drink"/></svg></span><div style="flex:1"><b>Getränke</b><div class="sub">Bar, Getränke & Ausschank</div></div><svg class="ico sm muted"><use href="#i-chev"/></svg></div>
+                <div class="row p14" style="padding:11px 12px"><span style="width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:#8b5cf620;color:#8a3ea8;box-shadow:inset 0 0 0 1px #8b5cf635"><svg class="ico"><use href="#i-coins"/></svg></span><div style="flex:1"><b>Finanzen</b><div class="sub">Ausgaben, Budget & Belege</div></div><svg class="ico sm muted"><use href="#i-chev"/></svg></div>
+              </div>
+            </div>
+          </div>
+          <div class="tabs">
+            <div class="tab active"><span class="pill"><svg class="ico"><use href="#i-home"/></svg></span>Übersicht</div>
+            <div class="tab"><span class="pill"><svg class="ico"><use href="#i-tasks"/></svg></span>Meine Sachen</div>
+            <div class="tab"><span class="pill"><svg class="ico"><use href="#i-cart"/></svg></span>Einkauf</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINANZEN -->
+    <div>
+      <p class="screen-label">Finanzen (Kosten-Übersicht)</p>
+      <div class="phone">
+        <div class="app">
+          <div class="hdr">
+            <div class="logo"><div class="mark"><svg width="19" height="19" viewBox="0 0 24 24"><path d="M12 3 21 20 H3 Z" fill="currentColor"/></svg></div><div class="title"><b>Hausfest <span class="brand">26</span></b><small>33 Jahre Via · 10 Jahre Spinnerei</small></div></div>
+            <div class="hdr-right"><div class="iconbtn"><svg class="ico"><use href="#i-bell"/></svg></div><div class="av" style="background:#ec4899">DÄ</div></div>
+          </div>
+          <div class="body">
+            <div style="padding:0 2px"><div class="sub" style="color:#7a8">← Übersicht</div><div class="row" style="gap:9px;margin-top:3px"><span style="width:15px;height:15px;border-radius:999px;background:#8b5cf6"></span><span style="font-size:22px;font-weight:800">Finanzen</span></div></div>
+            <div class="row" style="gap:4px;background:#dcdccb80;border-radius:12px;padding:4px;font-size:13px;font-weight:600">
+              <div style="flex:1;text-align:center;padding:7px;border-radius:9px;background:#fff;box-shadow:var(--soft)">Ausgaben</div>
+              <div style="flex:1;text-align:center;padding:7px;color:#7d766a">Todos</div>
+              <div style="flex:1;text-align:center;padding:7px;color:#7d766a">Pinnwand</div>
+            </div>
+            <div class="card" style="overflow:hidden">
+              <div class="grad-card">
+                <div class="sub" style="color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Kosten-Übersicht</div>
+                <div class="row" style="justify-content:space-between;align-items:flex-end;margin-top:4px">
+                  <div><div style="font-size:11px;opacity:.8">Ausgegeben (Ist)</div><div style="font-size:28px;font-weight:800">CHF 2'340.00</div></div>
+                  <div style="text-align:right"><div style="font-size:11px;opacity:.8">Budget (Plan)</div><div style="font-size:17px;font-weight:700">CHF 8'950.00</div></div>
+                </div>
+                <div class="barbg" style="margin-top:12px;background:rgba(255,255,255,.25)"><div class="barfill" style="width:26%;background:rgba(255,255,255,.9)"></div></div>
+                <div style="font-size:11px;opacity:.85;margin-top:6px">Noch CHF 6'610.00 im Budget</div>
+                <div class="row" style="justify-content:space-between;font-size:11px;opacity:.8;margin-top:8px"><span>Meine Ausgaben: CHF 120.00</span><span style="text-decoration:underline dotted">Defizitgarantie: CHF 5'000 (separat)</span></div>
+              </div>
+              <div style="padding:12px"><button class="btn btn-primary" style="width:100%"><svg class="ico sm"><use href="#i-plus"/></svg>Ausgabe erfassen</button></div>
+            </div>
+            <div>
+              <div class="screen-label" style="margin:2px 0 8px 2px">Kostenstellen</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="card p14" style="padding:11px 12px"><div class="row"><svg class="ico sm muted"><use href="#i-chev"/></svg><span style="width:10px;height:10px;border-radius:999px;background:#8a3ea8"></span><div style="flex:1"><b style="font-size:14px">Gagen</b><div class="barbg" style="margin-top:6px"><div class="barfill" style="width:34%;background:#8a3ea8"></div></div></div><div style="text-align:right"><b>CHF 1'150</b><div class="sub">/ 3'300</div></div></div></div>
+                <div class="card p14" style="padding:11px 12px"><div class="row"><svg class="ico sm muted"><use href="#i-chev"/></svg><span style="width:10px;height:10px;border-radius:999px;background:#0e8ba3"></span><div style="flex:1"><b style="font-size:14px">Getränke</b><div class="barbg" style="margin-top:6px"><div class="barfill" style="width:12%;background:#0e8ba3"></div></div></div><div style="text-align:right"><b>CHF 340</b><div class="sub">/ 2'900</div></div></div></div>
+                <div class="card p14" style="padding:11px 12px"><div class="row"><svg class="ico sm muted"><use href="#i-chev"/></svg><span style="width:10px;height:10px;border-radius:999px;background:#c2703d"></span><div style="flex:1"><b style="font-size:14px">Essen</b><div class="barbg" style="margin-top:6px"><div class="barfill" style="width:65%;background:#c2703d"></div></div></div><div style="text-align:right"><b>CHF 850</b><div class="sub">/ 1'300</div></div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tabs"><div class="tab active"><span class="pill"><svg class="ico"><use href="#i-home"/></svg></span>Übersicht</div><div class="tab"><span class="pill"><svg class="ico"><use href="#i-tasks"/></svg></span>Meine Sachen</div><div class="tab"><span class="pill"><svg class="ico"><use href="#i-cart"/></svg></span>Einkauf</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINE-UP -->
+    <div>
+      <p class="screen-label">Line-up (Timeline)</p>
+      <div class="phone">
+        <div class="app">
+          <div class="hdr"><div class="logo"><div class="mark"><svg width="19" height="19" viewBox="0 0 24 24"><path d="M12 3 21 20 H3 Z" fill="currentColor"/></svg></div><div class="title"><b>Hausfest <span class="brand">26</span></b><small>33 Jahre Via · 10 Jahre Spinnerei</small></div></div><div class="hdr-right"><div class="iconbtn"><svg class="ico"><use href="#i-bell"/></svg></div><div class="av" style="background:#ec4899">DÄ</div></div></div>
+          <div class="body">
+            <div class="row" style="justify-content:space-between"><b>Line-up</b><button class="btn btn-primary" style="padding:6px 12px;font-size:12px">+ Act</button></div>
+            <div class="card" style="overflow:hidden;padding:0">
+              <div style="display:flex;height:34px;border-bottom:1px solid #eee">
+                <div style="width:34px;border-right:1px solid #eee"></div>
+                <div style="flex:1;border-left:1px solid #eee;border-top:3px solid #6366f1;font-size:10px;font-weight:700;color:#6366f1;padding:5px 4px;line-height:1.1">Club</div>
+                <div style="flex:1;border-left:1px solid #eee;border-top:3px solid #0e8ba3;font-size:10px;font-weight:700;color:#0e8ba3;padding:5px 4px;line-height:1.1">Ambient (EG&nbsp;Nord)</div>
+                <div style="flex:1;border-left:1px solid #eee;border-top:3px solid #22c55e;font-size:10px;font-weight:700;color:#22c55e;padding:5px 4px;line-height:1.1">Garten</div>
+              </div>
+              <div style="display:flex;height:300px;position:relative">
+                <div style="width:34px;border-right:1px solid #eee;position:relative;font-size:10px;color:#b3ab9d">
+                  <div style="position:absolute;top:2px;right:3px">16</div><div style="position:absolute;top:74px;right:3px">18</div><div style="position:absolute;top:148px;right:3px">20</div><div style="position:absolute;top:222px;right:3px">22</div>
+                </div>
+                <div style="flex:1;position:relative;background-image:repeating-linear-gradient(#f4f2ee 0 1px,transparent 1px 74px)">
+                  <div style="position:absolute;left:2%;right:2%;top:88px;height:38px;background:#f59e0b1f;border-top:1px dashed #f59e0b80;border-bottom:1px dashed #f59e0b80;font-size:10px;color:#b0790f;padding:2px 6px">Nachtessen · 18:00–20:00</div>
+                  <div style="position:absolute;left:1%;width:31%;top:150px;height:70px;background:#6366f1;border-radius:8px;color:#fff;padding:5px 7px;font-size:11px;font-weight:700">The Spinners<div style="font-weight:400;opacity:.9;font-size:10px">20:00–21:30</div></div>
+                  <div style="position:absolute;left:34.5%;width:31%;top:200px;height:56px;background:#0e8ba3;border-radius:8px;color:#fff;padding:5px 7px;font-size:11px;font-weight:700">DJ Wolle</div>
+                  <div style="position:absolute;left:68%;width:31%;top:60px;height:44px;background:#22c55e;border-radius:8px;color:#fff;padding:5px 7px;font-size:11px;font-weight:700">Feuershow</div>
+                </div>
+              </div>
+            </div>
+            <div class="sub" style="text-align:center">Spalten passen sich der Breite an · Zeit läuft nach unten</div>
+          </div>
+          <div class="tabs"><div class="tab active"><span class="pill"><svg class="ico"><use href="#i-home"/></svg></span>Übersicht</div><div class="tab"><span class="pill"><svg class="ico"><use href="#i-tasks"/></svg></span>Meine Sachen</div><div class="tab"><span class="pill"><svg class="ico"><use href="#i-cart"/></svg></span>Einkauf</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EINKAUF -->
+    <div>
+      <p class="screen-label">Einkaufsliste</p>
+      <div class="phone">
+        <div class="app">
+          <div class="hdr"><div class="logo"><div class="mark"><svg width="19" height="19" viewBox="0 0 24 24"><path d="M12 3 21 20 H3 Z" fill="currentColor"/></svg></div><div class="title"><b>Hausfest <span class="brand">26</span></b><small>33 Jahre Via · 10 Jahre Spinnerei</small></div></div><div class="hdr-right"><div class="iconbtn"><svg class="ico"><use href="#i-bell"/></svg></div><div class="av" style="background:#ec4899">DÄ</div></div></div>
+          <div class="body">
+            <div style="padding:0 2px"><div style="font-size:24px;font-weight:800">Einkaufsliste</div><div class="sub">5 Artikel offen – pro Ressort & Sub-Ressort</div></div>
+            <div class="card p14" style="padding:12px"><div class="row"><svg class="ico sm muted"><use href="#i-chev"/></svg><span style="width:12px;height:12px;border-radius:999px;background:#22c55e"></span><b style="flex:1">Deko</b><span class="chip" style="background:#22c55e1c;color:#22c55e">3</span></div></div>
+            <div class="card" style="overflow:hidden"><div class="row p14" style="padding:11px 12px"><svg class="ico sm muted"><use href="#i-chev"/></svg><span style="width:12px;height:12px;border-radius:999px;background:#c2703d"></span><b style="flex:1">Essen</b><span class="chip" style="background:#c2703d1c;color:#c2703d">2</span></div>
+              <div style="border-top:1px solid #f0eee9;padding:6px 10px">
+                <div class="sub" style="font-weight:700;text-transform:uppercase;font-size:10px;padding:6px 4px 2px">Allgemein</div>
+                <div class="row" style="padding:6px 4px"><span style="width:20px;height:20px;border-radius:999px;border:2px solid #c9c3b8"></span><span style="flex:1;font-size:14px">Servietten</span></div>
+                <div class="row" style="padding:6px 4px"><span style="width:20px;height:20px;border-radius:999px;background:var(--accent);border:2px solid var(--accent);display:grid;place-items:center"><svg width="12" height="12" viewBox="0 0 24 24" style="stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"><use href="#i-check"/></svg></span><span style="flex:1;font-size:14px;color:#b3ab9d;text-decoration:line-through">Grillkohle</span></div>
+                <div class="row" style="padding:8px 4px 4px"><input class="fake" style="flex:1;padding:8px 10px" placeholder="Artikel hinzufügen …"/><button class="btn btn-primary" style="padding:8px 11px"><svg class="ico sm"><use href="#i-plus"/></svg></button></div>
+              </div>
+            </div>
+            <div class="card p14" style="padding:12px"><div class="row"><svg class="ico sm muted"><use href="#i-chev"/></svg><span style="width:12px;height:12px;border-radius:999px;background:#0e8ba3"></span><b style="flex:1">Getränke</b><svg class="ico sm" style="color:var(--accent)"><use href="#i-check"/></svg></div></div>
+          </div>
+          <div class="tabs"><div class="tab"><span class="pill"><svg class="ico"><use href="#i-home"/></svg></span>Übersicht</div><div class="tab"><span class="pill"><svg class="ico"><use href="#i-tasks"/></svg></span>Meine Sachen</div><div class="tab active"><span class="pill"><svg class="ico"><use href="#i-cart"/></svg></span>Einkauf</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="note">Hausfest 26 · Design-Mockup (statisch) — echte App: Next.js + Tailwind. Alle Icons sind eigene SVGs (keine Emojis).</p>
+</div>
+</body>
+</html>

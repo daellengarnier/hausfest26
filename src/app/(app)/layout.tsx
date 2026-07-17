@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthContext";
 import { api } from "@/lib/apiClient";
 import { Avatar, Spinner, Modal, NameToast } from "@/components/Ui";
 import { InstallInstructions } from "@/components/InstallInstructions";
+import { PushPrompt } from "@/components/PushPrompt";
 import { enablePush, refreshPushSilently, pushSupported } from "@/lib/pushClient";
 import { Icon, type IconName } from "@/components/Icon";
 
@@ -179,7 +180,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 pb-24">{children}</main>
+      <main className="flex-1 px-4 py-4 pb-24">
+        <PushPrompt />
+        {children}
+      </main>
 
       <nav className="pb-safe glass fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl border-t">
         <div className="grid grid-cols-3">
