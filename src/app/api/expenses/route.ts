@@ -24,6 +24,7 @@ export async function GET(request: Request) {
       userId: expenses.userId,
       userName: users.name,
       userColor: users.avatarColor,
+      actId: expenses.actId,
       belegId: expenses.belegId,
       belegMime: attachments.mime,
       belegFilename: attachments.filename,

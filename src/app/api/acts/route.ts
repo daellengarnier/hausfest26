@@ -2,7 +2,7 @@ import { eq, asc, inArray } from "drizzle-orm";
 import { requireUser, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
 import { acts, actFiles, attachments, scheduleEntries, users, ressorts } from "@/lib/db/schema";
-import { syncActBudget } from "@/lib/actBudget";
+import { syncActExpense } from "@/lib/actExpense";
 
 const TYPEN = ["band", "dj", "andere"];
 const normTyp = (v: unknown) => (TYPEN.includes(String(v)) ? String(v) : "band");
@@ -100,6 +100,6 @@ export async function POST(request: Request) {
       createdBy: auth.id,
     })
     .returning({ id: acts.id });
-  await syncActBudget(inserted[0].id, name, kostenCents);
+  await syncActExpense(inserted[0].id, name, kostenCents);
   return Response.json({ id: inserted[0].id }, { status: 201 });
 }

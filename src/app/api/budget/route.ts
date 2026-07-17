@@ -1,60 +1,50 @@
-import { eq, desc } from "drizzle-orm";
-import { requireUser, isResponse } from "@/lib/auth";
+import { asc, eq } from "drizzle-orm";
+import { requireUser, requireAdmin, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
-import { budgetItems, users, ressorts } from "@/lib/db/schema";
+import { categoryBudgets, appSettings } from "@/lib/db/schema";
 import { normalizeCategory } from "@/lib/finance";
 
-// Budgetposten (Plan/Schätzung) eines (Finanz-)Ressorts. Kollaborativ –
-// alle sehen alles; die Plan-vs-Ist-Auswertung rechnet der Client.
-export async function GET(request: Request) {
+const DEFIZIT_KEY = "defizitgarantie_cents";
+
+// Budget (Plan) je Kostenstelle + Defizitgarantie (separat, nicht im Budget).
+// Lesen: alle; Setzen: Admin.
+export async function GET() {
   const auth = await requireUser();
   if (isResponse(auth)) return auth;
-  const ressortId = Number(new URL(request.url).searchParams.get("ressortId"));
-  if (!ressortId) return Response.json({ error: "ressortId erforderlich" }, { status: 400 });
-
-  const rows = await getDb()
-    .select({
-      id: budgetItems.id,
-      kategorie: budgetItems.kategorie,
-      titel: budgetItems.titel,
-      betragCents: budgetItems.betragCents,
-      beschreibung: budgetItems.beschreibung,
-      createdAt: budgetItems.createdAt,
-      createdBy: budgetItems.createdBy,
-      createdByName: users.name,
-      createdByColor: users.avatarColor,
-      actId: budgetItems.actId,
-    })
-    .from(budgetItems)
-    .leftJoin(users, eq(users.id, budgetItems.createdBy))
-    .where(eq(budgetItems.ressortId, ressortId))
-    .orderBy(desc(budgetItems.id));
-  return Response.json({ budget: rows });
+  const db = getDb();
+  const rows = await db.select().from(categoryBudgets).orderBy(asc(categoryBudgets.kategorie));
+  const s = await db.select().from(appSettings).where(eq(appSettings.key, DEFIZIT_KEY)).limit(1);
+  const defizit = s[0] ? Number(s[0].value) : 0;
+  return Response.json({
+    budgets: rows.map((r) => ({ kategorie: r.kategorie, betragCents: r.betragCents })),
+    defizitgarantieCents: Number.isFinite(defizit) ? defizit : 0,
+  });
 }
 
-export async function POST(request: Request) {
-  const auth = await requireUser();
+export async function PUT(request: Request) {
+  const auth = await requireAdmin();
   if (isResponse(auth)) return auth;
   const body = await request.json().catch(() => ({}));
-  const ressortId = Number(body?.ressortId);
-  const betragCents = Math.round(Number(body?.betragCents));
-  if (!ressortId) return Response.json({ error: "ressortId erforderlich" }, { status: 400 });
-  if (!Number.isFinite(betragCents) || betragCents <= 0) return Response.json({ error: "Betrag erforderlich" }, { status: 400 });
-
   const db = getDb();
-  const r = await db.select({ id: ressorts.id }).from(ressorts).where(eq(ressorts.id, ressortId)).limit(1);
-  if (!r[0]) return Response.json({ error: "Ressort nicht gefunden" }, { status: 404 });
 
-  const inserted = await db
-    .insert(budgetItems)
-    .values({
-      ressortId,
-      createdBy: auth.id,
-      betragCents,
-      kategorie: normalizeCategory(body?.kategorie),
-      titel: String(body?.titel ?? "").trim(),
-      beschreibung: String(body?.beschreibung ?? "").trim(),
-    })
-    .returning({ id: budgetItems.id });
-  return Response.json({ id: inserted[0].id }, { status: 201 });
+  // Defizitgarantie setzen.
+  if (body?.defizitgarantieCents !== undefined) {
+    const cents = Math.round(Number(body.defizitgarantieCents));
+    if (!Number.isFinite(cents) || cents < 0) return Response.json({ error: "Ungültiger Betrag" }, { status: 400 });
+    await db
+      .insert(appSettings)
+      .values({ key: DEFIZIT_KEY, value: String(cents) })
+      .onConflictDoUpdate({ target: appSettings.key, set: { value: String(cents), updatedAt: new Date() } });
+    return Response.json({ ok: true });
+  }
+
+  // Budget einer Kostenstelle setzen.
+  const kategorie = normalizeCategory(body?.kategorie);
+  const cents = Math.round(Number(body?.betragCents));
+  if (!Number.isFinite(cents) || cents < 0) return Response.json({ error: "Ungültiger Betrag" }, { status: 400 });
+  await db
+    .insert(categoryBudgets)
+    .values({ kategorie, betragCents: cents })
+    .onConflictDoUpdate({ target: categoryBudgets.kategorie, set: { betragCents: cents } });
+  return Response.json({ ok: true });
 }

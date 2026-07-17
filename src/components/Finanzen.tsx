@@ -7,7 +7,7 @@ import { Avatar, EmptyState, Modal, Spinner } from "./Ui";
 import { Icon } from "./Icon";
 import { EXPENSE_CATEGORIES, CATEGORY_COLOR, formatChf } from "@/lib/finance";
 import { formatDate } from "@/lib/uiUtil";
-import type { Attachment, Expense, BudgetItem } from "@/lib/uiTypes";
+import type { Attachment, Expense, CategoryBudget } from "@/lib/uiTypes";
 
 function parseChf(s: string): number {
   const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9.]/g, ""));
@@ -16,14 +16,21 @@ function parseChf(s: string): number {
 
 export function Finanzen({ ressortId }: { ressortId: number }) {
   const { user } = useAuth();
+  const isAdmin = user?.rolle === "admin";
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
-  const [budget, setBudget] = useState<BudgetItem[] | null>(null);
+  const [budgets, setBudgets] = useState<CategoryBudget[] | null>(null);
+  const [defizit, setDefizit] = useState(0);
   const [expModal, setExpModal] = useState<Expense | "new" | null>(null);
-  const [budModal, setBudModal] = useState<BudgetItem | "new" | null>(null);
+  const [budModal, setBudModal] = useState<{ kategorie: string; betragCents: number } | null>(null);
+  const [defModal, setDefModal] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const loadExpenses = () => api.get<{ expenses: Expense[] }>(`/expenses?ressortId=${ressortId}`).then((d) => setExpenses(d.expenses));
-  const loadBudget = () => api.get<{ budget: BudgetItem[] }>(`/budget?ressortId=${ressortId}`).then((d) => setBudget(d.budget));
+  const loadBudget = () =>
+    api.get<{ budgets: CategoryBudget[]; defizitgarantieCents: number }>(`/budget`).then((d) => {
+      setBudgets(d.budgets);
+      setDefizit(d.defizitgarantieCents);
+    });
   useEffect(() => {
     loadExpenses();
     loadBudget();
@@ -32,62 +39,42 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
 
   const { mineCents, totalIst, totalPlan, byUser, kostenstellen } = useMemo(() => {
     const exp = expenses ?? [];
-    const bud = budget ?? [];
+    const budMap = new Map((budgets ?? []).map((b) => [b.kategorie, b.betragCents]));
     let mine = 0,
-      ist = 0,
-      plan = 0;
+      ist = 0;
     const usr = new Map<number, { name: string; color: string; cents: number }>();
     const expByCat = new Map<string, Expense[]>();
-    const budByCat = new Map<string, BudgetItem[]>();
     for (const e of exp) {
       ist += e.betragCents;
       if (e.userId === user?.id) mine += e.betragCents;
-      (expByCat.get(e.kategorie) ?? expByCat.set(e.kategorie, []).get(e.kategorie)!).push(e);
+      const arr = expByCat.get(e.kategorie) ?? [];
+      arr.push(e);
+      expByCat.set(e.kategorie, arr);
       if (e.userId != null) {
         const cur = usr.get(e.userId) ?? { name: e.userName ?? "?", color: e.userColor ?? "#8a8172", cents: 0 };
         cur.cents += e.betragCents;
         usr.set(e.userId, cur);
       }
     }
-    for (const b of bud) {
-      plan += b.betragCents;
-      (budByCat.get(b.kategorie) ?? budByCat.set(b.kategorie, []).get(b.kategorie)!).push(b);
-    }
-    // Reihenfolge: definierte Kostenstellen zuerst, danach evtl. Alt-Kategorien.
+    let plan = 0;
+    for (const v of budMap.values()) plan += v;
     const order = [...EXPENSE_CATEGORIES] as string[];
-    const all = new Set<string>([...order, ...expByCat.keys(), ...budByCat.keys()]);
+    const all = new Set<string>([...order, ...expByCat.keys(), ...budMap.keys()]);
     const rows = [...all]
-      .filter((c) => (expByCat.get(c)?.length ?? 0) > 0 || (budByCat.get(c)?.length ?? 0) > 0)
       .sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99))
-      .map((c) => {
-        const es = expByCat.get(c) ?? [];
-        const bs = budByCat.get(c) ?? [];
-        return {
-          kategorie: c,
-          ist: es.reduce((s, e) => s + e.betragCents, 0),
-          plan: bs.reduce((s, b) => s + b.betragCents, 0),
-          expenses: es,
-          budget: bs,
-        };
-      });
-    return {
-      mineCents: mine,
-      totalIst: ist,
-      totalPlan: plan,
-      byUser: [...usr.values()].sort((a, b) => b.cents - a.cents),
-      kostenstellen: rows,
-    };
-  }, [expenses, budget, user]);
+      .map((c) => ({ kategorie: c, ist: (expByCat.get(c) ?? []).reduce((s, e) => s + e.betragCents, 0), plan: budMap.get(c) ?? 0, expenses: expByCat.get(c) ?? [] }));
+    return { mineCents: mine, totalIst: ist, totalPlan: plan, byUser: [...usr.values()].sort((a, b) => b.cents - a.cents), kostenstellen: rows };
+  }, [expenses, budgets, user]);
 
   const restCents = totalPlan - totalIst;
-  const loading = expenses === null || budget === null;
+  const loading = expenses === null || budgets === null;
 
   return (
     <div className="space-y-4">
-      {/* Budget-Übersicht */}
+      {/* Kosten-Übersicht */}
       <div className="card overflow-hidden">
         <div className="brand-gradient px-5 py-4 text-white">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/80">Budget-Übersicht</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/80">Kosten-Übersicht</p>
           <div className="mt-1 flex items-end justify-between gap-3">
             <div>
               <p className="text-xs text-white/70">Ausgegeben (Ist)</p>
@@ -108,7 +95,16 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
               </p>
             </div>
           )}
-          <p className="mt-2 text-xs text-white/75">Meine Ausgaben: CHF {formatChf(mineCents)}</p>
+          <div className="mt-2 flex items-center justify-between gap-2 text-xs text-white/75">
+            <span>Meine Ausgaben: CHF {formatChf(mineCents)}</span>
+            <button
+              className={`text-white/70 ${isAdmin ? "underline decoration-dotted underline-offset-2" : "cursor-default"}`}
+              onClick={() => isAdmin && setDefModal(true)}
+              disabled={!isAdmin}
+            >
+              Defizitgarantie: {defizit > 0 ? `CHF ${formatChf(defizit)}` : "–"} (separat)
+            </button>
+          </div>
         </div>
         <div className="p-3">
           <button className="btn-primary w-full py-2 text-sm" onClick={() => setExpModal("new")}>
@@ -121,22 +117,19 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
         <Spinner label="Lade Finanzen …" />
       ) : (
         <>
-          {/* Kostenstellen (Plan vs. Ist, aufklappbar) */}
           <div>
             <h3 className="mb-2 px-1 text-sm font-bold text-stone-500">Kostenstellen</h3>
-            {kostenstellen.length === 0 ? (
-              <EmptyState title="Noch keine Einträge" hint="Erfasse eine Ausgabe oder plane ein Budget – oder trage bei einem Act eine Gage ein." />
-            ) : (
-              <div className="space-y-2">
-                {kostenstellen.map((k) => {
-                  const color = CATEGORY_COLOR[k.kategorie] ?? "#8a8172";
-                  const over = k.plan > 0 && k.ist > k.plan;
-                  const noPlan = k.plan === 0 && k.ist > 0;
-                  const width = k.plan > 0 ? Math.min(100, (k.ist / k.plan) * 100) : k.ist > 0 ? 100 : 0;
-                  const isOpen = open[k.kategorie];
-                  return (
-                    <div key={k.kategorie} className="card overflow-hidden">
-                      <button className="flex w-full items-center gap-2 px-3 py-2.5 text-left" onClick={() => setOpen((o) => ({ ...o, [k.kategorie]: !o[k.kategorie] }))}>
+            <div className="space-y-2">
+              {kostenstellen.map((k) => {
+                const color = CATEGORY_COLOR[k.kategorie] ?? "#8a8172";
+                const over = k.plan > 0 && k.ist > k.plan;
+                const noPlan = k.plan === 0 && k.ist > 0;
+                const width = k.plan > 0 ? Math.min(100, (k.ist / k.plan) * 100) : k.ist > 0 ? 100 : 0;
+                const isOpen = open[k.kategorie];
+                return (
+                  <div key={k.kategorie} className="card overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2.5">
+                      <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setOpen((o) => ({ ...o, [k.kategorie]: !o[k.kategorie] }))}>
                         <Icon name="chevron" size={15} className={`shrink-0 text-stone-400 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                         <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
                         <span className="min-w-0 flex-1">
@@ -145,31 +138,32 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
                             <span className="block h-full rounded-full" style={{ width: `${width}%`, background: over || noPlan ? "#c2453d" : color }} />
                           </span>
                         </span>
-                        <span className="shrink-0 text-right">
-                          <span className="block text-sm font-bold tabular-nums text-ink">CHF {formatChf(k.ist)}</span>
-                          <span className="block text-xs tabular-nums text-stone-400">/ {k.plan > 0 ? formatChf(k.plan) : "–"}</span>
-                        </span>
                       </button>
-                      {isOpen && (
-                        <div className="divide-y divide-stone-100 border-t border-stone-100">
-                          {k.budget.map((b) => (
-                            <button
-                              key={`b${b.id}`}
-                              onClick={() => setBudModal(b)}
-                              disabled={b.actId != null}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm disabled:opacity-100"
-                            >
-                              <span className="chip bg-accent/10 text-accent-dark">Plan</span>
+                      <div className="shrink-0 text-right">
+                        <span className="block text-sm font-bold tabular-nums text-ink">CHF {formatChf(k.ist)}</span>
+                        <button
+                          className={`block text-xs tabular-nums text-stone-400 ${isAdmin ? "underline decoration-dotted underline-offset-2" : "cursor-default"}`}
+                          onClick={() => isAdmin && setBudModal({ kategorie: k.kategorie, betragCents: k.plan })}
+                          disabled={!isAdmin}
+                        >
+                          / {k.plan > 0 ? formatChf(k.plan) : "–"}
+                        </button>
+                      </div>
+                    </div>
+                    {isOpen && (
+                      <div className="divide-y divide-stone-100 border-t border-stone-100">
+                        {k.expenses.length === 0 && <p className="px-3 py-2 text-sm text-stone-400">Noch keine Ausgaben.</p>}
+                        {k.expenses.map((e) =>
+                          e.actId != null ? (
+                            <div key={e.id} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
                               <span className="min-w-0 flex-1 truncate text-stone-700">
-                                {b.titel || k.kategorie}
-                                {b.actId != null && <span className="ml-1 text-xs text-stone-400">(via Act)</span>}
+                                {e.beschreibung}
+                                <span className="ml-1 text-xs text-stone-400">(via Act)</span>
                               </span>
-                              <span className="shrink-0 font-semibold tabular-nums text-stone-500">CHF {formatChf(b.betragCents)}</span>
-                            </button>
-                          ))}
-                          {k.expenses.map((e) => (
-                            <button key={`e${e.id}`} onClick={() => setExpModal(e)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
-                              <span className="chip bg-stone-100 text-stone-500">Ist</span>
+                              <span className="shrink-0 font-semibold tabular-nums text-ink">CHF {formatChf(e.betragCents)}</span>
+                            </div>
+                          ) : (
+                            <button key={e.id} onClick={() => setExpModal(e)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm active:bg-stone-50">
                               <span className="min-w-0 flex-1 truncate text-stone-700">
                                 {e.beschreibung || k.kategorie}
                                 {e.userName && <span className="ml-1 text-xs text-stone-400">· {e.userId === user?.id ? "du" : e.userName}</span>}
@@ -177,17 +171,16 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
                               {e.belegId && <Icon name="file" size={13} className="shrink-0 text-stone-400" />}
                               <span className="shrink-0 font-semibold tabular-nums text-ink">CHF {formatChf(e.betragCents)}</span>
                             </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                          ),
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Nach Person (für die Rückerstattung) */}
           {byUser.length > 1 && (
             <div className="card p-4">
               <h3 className="mb-2 text-sm font-bold text-stone-500">Ausgelegt nach Person</h3>
@@ -209,7 +202,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
         <ExpenseModal
           ressortId={ressortId}
           expense={expModal === "new" ? null : expModal}
-          canDelete={expModal !== "new" && (expModal.userId === user?.id || user?.rolle === "admin")}
+          canDelete={expModal !== "new" && (expModal.userId === user?.id || isAdmin)}
           onClose={() => setExpModal(null)}
           onSaved={() => {
             setExpModal(null);
@@ -217,14 +210,23 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
           }}
         />
       )}
-
       {budModal && (
-        <BudgetModal
-          ressortId={ressortId}
-          item={budModal === "new" ? null : budModal}
+        <CategoryBudgetModal
+          kategorie={budModal.kategorie}
+          betragCents={budModal.betragCents}
           onClose={() => setBudModal(null)}
           onSaved={() => {
             setBudModal(null);
+            loadBudget();
+          }}
+        />
+      )}
+      {defModal && (
+        <DefizitModal
+          betragCents={defizit}
+          onClose={() => setDefModal(false)}
+          onSaved={() => {
+            setDefModal(false);
             loadBudget();
           }}
         />
@@ -233,34 +235,17 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
   );
 }
 
-function BudgetModal({
-  ressortId,
-  item,
-  onClose,
-  onSaved,
-}: {
-  ressortId: number;
-  item: BudgetItem | null;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const editing = !!item;
-  const [betrag, setBetrag] = useState(item ? (item.betragCents / 100).toFixed(2) : "");
-  const [kategorie, setKategorie] = useState(item?.kategorie ?? EXPENSE_CATEGORIES[0]);
-  const [titel, setTitel] = useState(item?.titel ?? "");
-  const [beschreibung, setBeschreibung] = useState(item?.beschreibung ?? "");
+function CategoryBudgetModal({ kategorie, betragCents, onClose, onSaved }: { kategorie: string; betragCents: number; onClose: () => void; onSaved: () => void }) {
+  const [betrag, setBetrag] = useState(betragCents ? (betragCents / 100).toFixed(2) : "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
   const save = async () => {
-    const cents = parseChf(betrag);
-    if (!Number.isFinite(cents) || cents <= 0) return setError("Bitte einen gültigen Betrag angeben");
+    const cents = betrag.trim() ? parseChf(betrag) : 0;
+    if (!Number.isFinite(cents) || cents < 0) return setError("Ungültiger Betrag");
     setSaving(true);
     setError("");
-    const payload = { ressortId, betragCents: cents, kategorie, titel: titel.trim(), beschreibung: beschreibung.trim() };
     try {
-      if (editing) await api.patch(`/budget/${item!.id}`, payload);
-      else await api.post("/budget", payload);
+      await api.put("/budget", { kategorie, betragCents: cents });
       onSaved();
     } catch (e) {
       setError((e as Error).message);
@@ -268,59 +253,62 @@ function BudgetModal({
       setSaving(false);
     }
   };
-
-  const remove = async () => {
-    await api.del(`/budget/${item!.id}`);
-    onSaved();
-  };
-
   return (
     <Modal
       open
       onClose={onClose}
-      title={editing ? "Budgetposten bearbeiten" : "Budgetposten (Schätzung)"}
+      title={`Budget: ${kategorie}`}
       footer={
         <div className="flex gap-2">
-          {editing && (
-            <button className="btn-danger" onClick={remove} aria-label="Löschen">
-              <Icon name="trash" size={17} />
-            </button>
-          )}
-          <button className="btn-ghost flex-1" onClick={onClose}>
-            Abbrechen
-          </button>
-          <button className="btn-primary flex-1" onClick={save} disabled={saving}>
-            Speichern
-          </button>
+          <button className="btn-ghost flex-1" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary flex-1" onClick={save} disabled={saving}>Speichern</button>
         </div>
       }
     >
-      <div className="space-y-4">
-        <div>
-          <label className="label">Bezeichnung</label>
-          <input className="input" value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Zelt-Miete" autoFocus />
+      <div className="space-y-3">
+        <label className="label">Budget (Plan) für {kategorie} – CHF</label>
+        <input className="input" inputMode="decimal" value={betrag} onChange={(e) => setBetrag(e.target.value)} placeholder="0.00" autoFocus />
+        <p className="text-xs text-stone-400">Summe aller Kostenstellen-Budgets = Gesamtbudget (Plan).</p>
+        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      </div>
+    </Modal>
+  );
+}
+
+function DefizitModal({ betragCents, onClose, onSaved }: { betragCents: number; onClose: () => void; onSaved: () => void }) {
+  const [betrag, setBetrag] = useState(betragCents ? (betragCents / 100).toFixed(2) : "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const save = async () => {
+    const cents = betrag.trim() ? parseChf(betrag) : 0;
+    if (!Number.isFinite(cents) || cents < 0) return setError("Ungültiger Betrag");
+    setSaving(true);
+    setError("");
+    try {
+      await api.put("/budget", { defizitgarantieCents: cents });
+      onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Defizitgarantie"
+      footer={
+        <div className="flex gap-2">
+          <button className="btn-ghost flex-1" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary flex-1" onClick={save} disabled={saving}>Speichern</button>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="label">Betrag (CHF)</label>
-            <input className="input" inputMode="decimal" value={betrag} onChange={(e) => setBetrag(e.target.value)} placeholder="0.00" />
-          </div>
-          <div>
-            <label className="label">Kostenstelle</label>
-            <select className="input" value={kategorie} onChange={(e) => setKategorie(e.target.value)}>
-              {EXPENSE_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div>
-          <label className="label">Notiz (optional)</label>
-          <input className="input" value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="z. B. inkl. Auf-/Abbau, Schätzung" />
-        </div>
-        <p className="text-xs text-stone-400">Tipp: Gagen der Acts erscheinen automatisch – die trägst du direkt beim Act ein.</p>
+      }
+    >
+      <div className="space-y-3">
+        <label className="label">Defizitgarantie (CHF)</label>
+        <input className="input" inputMode="decimal" value={betrag} onChange={(e) => setBetrag(e.target.value)} placeholder="0.00" autoFocus />
+        <p className="text-xs text-stone-400">Wird separat notiert und zählt nicht zum Budget (Plan).</p>
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </div>
     </Modal>
@@ -406,12 +394,8 @@ function ExpenseModal({
               <Icon name="trash" size={17} />
             </button>
           )}
-          <button className="btn-ghost flex-1" onClick={onClose}>
-            Abbrechen
-          </button>
-          <button className="btn-primary flex-1" onClick={save} disabled={saving || uploading}>
-            Speichern
-          </button>
+          <button className="btn-ghost flex-1" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary flex-1" onClick={save} disabled={saving || uploading}>Speichern</button>
         </div>
       }
     >
@@ -430,9 +414,7 @@ function ExpenseModal({
           <label className="label">Kostenstelle</label>
           <select className="input" value={kategorie} onChange={(e) => setKategorie(e.target.value)}>
             {EXPENSE_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+              <option key={c} value={c}>{c}</option>
             ))}
           </select>
         </div>
@@ -440,8 +422,6 @@ function ExpenseModal({
           <label className="label">Beschreibung</label>
           <input className="input" value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="Wofür? z. B. Farbe & Pinsel" />
         </div>
-
-        {/* Beleg (optional) */}
         <div>
           <label className="label">Beleg (Foto/PDF, optional)</label>
           <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
@@ -461,7 +441,6 @@ function ExpenseModal({
             </button>
           )}
         </div>
-
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </div>
     </Modal>

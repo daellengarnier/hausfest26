@@ -78,6 +78,13 @@
       "when": 1784287383635,
       "tag": "0010_shopping",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784288922365,
+      "tag": "0011_budget_kostenstellen",
+      "breakpoints": true
     }
   ]
 }

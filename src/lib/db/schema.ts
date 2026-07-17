@@ -83,10 +83,28 @@ export const expenses = pgTable("expenses", {
   beschreibung: text("beschreibung").notNull().default(""),
   datum: text("datum"), // 'YYYY-MM-DD'
   belegId: integer("belegId").references(() => attachments.id, { onDelete: "set null" }),
+  // Automatisch aus einem Act gepflegte Ausgabe (Gage) – hält Acts & Finanzen synchron.
+  actId: integer("actId").references(() => acts.id, { onDelete: "cascade" }),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Budgetposten (Plan/Schätzung) je Bereich – was ein Ressort an Kosten erwartet.
+// Einfache Key-Value-Einstellungen (z. B. Defizitgarantie, separat vom Budget).
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull().default(""),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Budget (Plan) je Kostenstelle – ein Zielbetrag pro Kategorie.
+// Gesamtbudget = Summe über alle Kostenstellen.
+export const categoryBudgets = pgTable("category_budgets", {
+  kategorie: text("kategorie").primaryKey(),
+  betragCents: integer("betragCents").notNull().default(0),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Veraltet: früher Budgetposten (Plan). Bleibt als leere Tabelle bestehen,
+// Budget läuft jetzt über category_budgets; Gagen sind Ausgaben (expenses.actId).
 export const budgetItems = pgTable("budget_items", {
   id: serial("id").primaryKey(),
   ressortId: integer("ressortId")
@@ -97,7 +115,6 @@ export const budgetItems = pgTable("budget_items", {
   betragCents: integer("betragCents").notNull(),
   beschreibung: text("beschreibung").notNull().default(""),
   createdBy: integer("createdBy").references(() => users.id, { onDelete: "set null" }),
-  // Automatisch aus einem Act gepflegter Posten (Gage) – hält Finanzen & Acts synchron.
   actId: integer("actId").references(() => acts.id, { onDelete: "cascade" }),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });

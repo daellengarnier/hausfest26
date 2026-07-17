@@ -66,9 +66,15 @@ export interface Expense {
   userId: number | null;
   userName: string | null;
   userColor: string | null;
+  actId: number | null;
   belegId: number | null;
   belegMime: string | null;
   belegFilename: string | null;
+}
+
+export interface CategoryBudget {
+  kategorie: string;
+  betragCents: number;
 }
 
 export interface ShoppingItem {
@@ -112,19 +118,6 @@ export interface Act {
   createdByName: string | null;
   files: ActFile[];
   slot: { entryId: number; floor: string; startMin: number; endMin: number } | null;
-}
-
-export interface BudgetItem {
-  id: number;
-  kategorie: string;
-  titel: string;
-  betragCents: number;
-  beschreibung: string;
-  createdAt: string;
-  createdBy: number | null;
-  createdByName: string | null;
-  createdByColor: string | null;
-  actId: number | null;
 }
 
 export type BoardKind = "programm" | "bars";

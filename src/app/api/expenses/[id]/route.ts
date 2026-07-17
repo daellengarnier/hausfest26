@@ -12,6 +12,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   const rows = await db.select().from(expenses).where(eq(expenses.id, Number(id))).limit(1);
   const e = rows[0];
   if (!e) return Response.json({ error: "Nicht gefunden" }, { status: 404 });
+  if (e.actId != null) return Response.json({ error: "Diese Ausgabe (Gage) wird über den Act gepflegt" }, { status: 400 });
   if (e.userId !== auth.id && auth.rolle !== "admin") return Response.json({ error: "Nicht erlaubt" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
@@ -34,8 +35,9 @@ export async function DELETE(_request: Request, ctx: { params: Promise<{ id: str
   if (isResponse(auth)) return auth;
   const { id } = await ctx.params;
   const db = getDb();
-  const rows = await db.select({ userId: expenses.userId }).from(expenses).where(eq(expenses.id, Number(id))).limit(1);
+  const rows = await db.select({ userId: expenses.userId, actId: expenses.actId }).from(expenses).where(eq(expenses.id, Number(id))).limit(1);
   if (!rows[0]) return Response.json({ error: "Nicht gefunden" }, { status: 404 });
+  if (rows[0].actId != null) return Response.json({ error: "Diese Ausgabe (Gage) wird über den Act gepflegt" }, { status: 400 });
   if (rows[0].userId !== auth.id && auth.rolle !== "admin") return Response.json({ error: "Nicht erlaubt" }, { status: 403 });
   await db.delete(expenses).where(eq(expenses.id, Number(id)));
   return Response.json({ ok: true });

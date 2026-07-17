@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { requireUser, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
 import { acts, actFiles } from "@/lib/db/schema";
-import { syncActBudget } from "@/lib/actBudget";
+import { syncActExpense } from "@/lib/actExpense";
 
 const TYPEN = ["band", "dj", "andere"];
 const RUBRIKEN = ["techrider", "hospitality", "sonstiges"];
@@ -49,10 +49,10 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     if (vals.length > 0) await db.insert(actFiles).values(vals);
   }
 
-  // Finanzen-Posten „Gagen" synchron halten.
+  // Finanzen-Ausgabe „Gage" synchron halten.
   const finalName = patch.name ?? act.name;
   const finalKosten = patch.kostenCents !== undefined ? patch.kostenCents : act.kostenCents;
-  await syncActBudget(actId, finalName, finalKosten);
+  await syncActExpense(actId, finalName, finalKosten);
   return Response.json({ ok: true });
 }
 
