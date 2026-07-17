@@ -4,6 +4,21 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { activityItems, users } from "@/lib/db/schema";
 import type { ActivityTyp } from "@/lib/db/schema";
+import { sendPushToUsers } from "@/lib/push";
+
+const PUSH_TITLE: Record<ActivityTyp, string> = {
+  mention: "Du wurdest erwähnt",
+  zuweisung: "Neues Todo für dich",
+  neuer_kommentar: "Neuer Kommentar",
+  sitzung: "Sitzung",
+};
+
+function refUrl(refTyp: string, refId: number): string {
+  if (refTyp === "todo") return `/todo/${refId}`;
+  if (refTyp === "ressort") return `/ressort/${refId}`;
+  if (refTyp === "meeting" || refTyp === "sitzung") return `/meetings/${refId}`;
+  return "/inbox";
+}
 
 export interface UserLite {
   id: number;
@@ -50,4 +65,17 @@ export async function notifyMany(inputs: NotifyInput[]): Promise<void> {
   const filtered = inputs.filter((i) => i.userId !== i.actorUserId);
   if (filtered.length === 0) return;
   await getDb().insert(activityItems).values(filtered);
+
+  // Zusätzlich Web-Push senden (best effort, blockiert die Aktion nicht).
+  void (async () => {
+    try {
+      await Promise.allSettled(
+        filtered.map((i) =>
+          sendPushToUsers([i.userId], { title: PUSH_TITLE[i.typ] ?? "Hausfest 26", body: i.text, url: refUrl(i.refTyp, i.refId) }),
+        ),
+      );
+    } catch {
+      /* ignorieren */
+    }
+  })();
 }

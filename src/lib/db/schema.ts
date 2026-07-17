@@ -92,6 +92,18 @@ export const expenses = pgTable("expenses", {
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Web-Push-Abos (ein Eintrag pro Gerät/Browser einer Person).
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Einfache Key-Value-Einstellungen (z. B. Defizitgarantie, separat vom Budget).
 export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),

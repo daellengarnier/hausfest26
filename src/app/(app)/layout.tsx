@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthContext";
 import { api } from "@/lib/apiClient";
 import { Avatar, Spinner, Modal, NameToast } from "@/components/Ui";
 import { InstallInstructions } from "@/components/InstallInstructions";
+import { enablePush, refreshPushSilently, pushSupported } from "@/lib/pushClient";
 import { Icon, type IconName } from "@/components/Icon";
 
 const TABS: { href: string; label: string; icon: IconName; exact: boolean; badge?: boolean }[] = [
@@ -23,8 +24,27 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [pushMsg, setPushMsg] = useState("");
+  const [pushBusy, setPushBusy] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const avatarFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    refreshPushSilently();
+  }, []);
+
+  const enableNotifications = async () => {
+    setPushBusy(true);
+    setPushMsg("");
+    const r = await enablePush();
+    if (r.ok) {
+      await fetch("/api/push/test", { method: "POST", credentials: "include" }).catch(() => undefined);
+      setPushMsg("Aktiviert – du solltest gleich eine Test-Benachrichtigung sehen.");
+    } else {
+      setPushMsg(r.error ?? "Fehlgeschlagen.");
+    }
+    setPushBusy(false);
+  };
 
   const onAvatarFile = async (f: File) => {
     setUploadingAvatar(true);
@@ -103,10 +123,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <span className="mt-0.5 text-[10px] font-medium text-stone-500">33 Jahre Via · 10 Jahre Spinnerei</span>
             </span>
           </Link>
-          <div className="relative" ref={menuRef}>
+          <div className="flex items-center gap-1">
+            <Link href="/inbox" className="relative grid h-10 w-10 place-items-center rounded-full text-stone-500 active:scale-95" aria-label="Benachrichtigungen">
+              <Icon name="bell" size={22} />
+              {unread > 0 && (
+                <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white ring-2 ring-[#e7eed9]">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
+            </Link>
+            <div className="relative" ref={menuRef}>
             <button onClick={() => setMenuOpen((o) => !o)} className="relative flex items-center gap-2 rounded-full p-0.5 active:scale-95">
               <Avatar name={user.name} color={user.avatarColor} size={34} userId={user.id} showName={false} />
-              {unread > 0 && <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-terra ring-2 ring-[#e7eed9]" />}
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl bg-white py-1 shadow-lg ring-1 ring-stone-200">
@@ -127,6 +155,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <button onClick={() => { setMenuOpen(false); setInstallOpen(true); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
                   <Icon name="download" size={17} className="text-stone-500" /> App installieren
                 </button>
+                {pushSupported() && (
+                  <button onClick={enableNotifications} disabled={pushBusy} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
+                    <Icon name="bell" size={17} className="text-stone-500" /> {pushBusy ? "Aktiviere …" : "Benachrichtigungen aktivieren"}
+                  </button>
+                )}
+                {pushMsg && <p className="px-4 pb-2 text-xs text-stone-500">{pushMsg}</p>}
                 {user.rolle === "admin" && (
                   <button onClick={() => { setMenuOpen(false); router.push("/admin"); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
                     <Icon name="gear" size={17} className="text-stone-500" /> Administration
@@ -140,6 +174,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               </div>
             )}
+            </div>
           </div>
         </div>
       </header>

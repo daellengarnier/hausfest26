@@ -38,6 +38,10 @@ services:
       # Optional: KI-Beleglesung im Finanzen-Modul (leer = manuelle Eingabe).
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
+      # Web-Push (Benachrichtigungen). Leer = Push deaktiviert.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:orga@hausfest.al-daellen.ch}
     depends_on:
       db:
         condition: service_healthy

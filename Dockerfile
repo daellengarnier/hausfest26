@@ -42,6 +42,26 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # postgres-js/migrator-Submodul nicht ab).
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules/postgres ./node_modules/postgres
+
+# web-push + Abhängigkeiten (für Push-Benachrichtigungen; vom Standalone-Trace
+# nicht erfasst).
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/web-push ./node_modules/web-push
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/asn1.js ./node_modules/asn1.js
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/http_ece ./node_modules/http_ece
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/https-proxy-agent ./node_modules/https-proxy-agent
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/agent-base ./node_modules/agent-base
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/jws ./node_modules/jws
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/jwa ./node_modules/jwa
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/ecdsa-sig-formatter ./node_modules/ecdsa-sig-formatter
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/buffer-equal-constant-time ./node_modules/buffer-equal-constant-time
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/bn.js ./node_modules/bn.js
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/minimalistic-assert ./node_modules/minimalistic-assert
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/minimist ./node_modules/minimist
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/safe-buffer ./node_modules/safe-buffer
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/safer-buffer ./node_modules/safer-buffer
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/inherits ./node_modules/inherits
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/debug ./node_modules/debug
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/ms ./node_modules/ms
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 RUN chmod +x /app/scripts/entrypoint.sh
