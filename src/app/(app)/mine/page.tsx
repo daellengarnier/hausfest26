@@ -59,14 +59,18 @@ export default function MinePage() {
               {openAssigned.length === 0 ? (
                 <p className="px-4 py-3 text-sm text-stone-400">Alles erledigt.</p>
               ) : (
-                openAssigned.map((t) => <TodoRowWithRessort key={t.id} todo={t} onChanged={load} />)
+                openAssigned.map((t, i) => (
+                  <TodoRowWithRessort key={t.id} todo={t} showRessort={i === 0 || openAssigned[i - 1].ressortId !== t.ressortId} onChanged={load} />
+                ))
               )}
             </div>
             {doneAssigned.length > 0 && (
               <div>
                 <h3 className="mb-2 px-1 text-sm font-semibold text-stone-500">Erledigt</h3>
                 <div className="card divide-y divide-slate-100 overflow-hidden opacity-70">
-                  {doneAssigned.map((t) => <TodoRowWithRessort key={t.id} todo={t} onChanged={load} />)}
+                  {doneAssigned.map((t, i) => (
+                    <TodoRowWithRessort key={t.id} todo={t} showRessort={i === 0 || doneAssigned[i - 1].ressortId !== t.ressortId} onChanged={load} />
+                  ))}
                 </div>
               </div>
             )}
@@ -97,10 +101,10 @@ export default function MinePage() {
   );
 }
 
-function TodoRowWithRessort({ todo, onChanged }: { todo: Todo; onChanged: () => void }) {
+function TodoRowWithRessort({ todo, showRessort = true, onChanged }: { todo: Todo; showRessort?: boolean; onChanged: () => void }) {
   return (
     <div>
-      {todo.ressortName && (
+      {showRessort && todo.ressortName && (
         <div className="flex items-center gap-1.5 px-3 pt-2 text-xs font-medium" style={{ color: todo.ressortFarbe ?? "#64748b" }}>
           <span className="h-2 w-2 rounded-full" style={{ background: todo.ressortFarbe ?? "#64748b" }} />
           {todo.ressortName}
