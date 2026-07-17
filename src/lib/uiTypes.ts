@@ -71,6 +71,23 @@ export interface Expense {
   belegFilename: string | null;
 }
 
+export interface ShoppingItem {
+  id: number;
+  ressortId: number;
+  subRessortId: number | null;
+  titel: string;
+  menge: string;
+  erledigt: boolean;
+}
+
+export interface ShoppingGroup {
+  id: number;
+  name: string;
+  farbe: string;
+  subRessorts: { id: number; name: string }[];
+  items: ShoppingItem[];
+}
+
 export type ActRubrik = "techrider" | "hospitality" | "sonstiges";
 
 export interface ActFile {

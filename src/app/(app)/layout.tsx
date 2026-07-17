@@ -11,7 +11,7 @@ import { Icon, type IconName } from "@/components/Icon";
 const TABS: { href: string; label: string; icon: IconName; exact: boolean; badge?: boolean }[] = [
   { href: "/", label: "Übersicht", icon: "home", exact: true },
   { href: "/mine", label: "Meine Sachen", icon: "tasks", exact: false },
-  { href: "/inbox", label: "Inbox", icon: "bell", exact: false, badge: true },
+  { href: "/einkauf", label: "Einkauf", icon: "cart", exact: false },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -87,8 +87,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <div className="relative" ref={menuRef}>
-            <button onClick={() => setMenuOpen((o) => !o)} className="flex items-center gap-2 rounded-full p-0.5 active:scale-95">
+            <button onClick={() => setMenuOpen((o) => !o)} className="relative flex items-center gap-2 rounded-full p-0.5 active:scale-95">
               <Avatar name={user.name} color={user.avatarColor} size={34} />
+              {unread > 0 && <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-terra ring-2 ring-[#e7eed9]" />}
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl bg-white py-1 shadow-lg ring-1 ring-stone-200">
@@ -97,6 +98,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <p className="text-xs text-stone-500">{user.email}</p>
                   {user.rolle === "admin" && <span className="chip mt-1 bg-accent/10 text-accent-dark">Admin</span>}
                 </div>
+                <button onClick={() => { setMenuOpen(false); router.push("/inbox"); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
+                  <Icon name="bell" size={17} className="text-stone-500" /> Inbox
+                  {unread > 0 && (
+                    <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white">{unread > 99 ? "99+" : unread}</span>
+                  )}
+                </button>
                 {user.rolle === "admin" && (
                   <button onClick={() => { setMenuOpen(false); router.push("/admin"); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
                     <Icon name="gear" size={17} className="text-stone-500" /> Administration

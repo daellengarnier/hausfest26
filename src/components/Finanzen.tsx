@@ -110,12 +110,9 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
           )}
           <p className="mt-2 text-xs text-white/75">Meine Ausgaben: CHF {formatChf(mineCents)}</p>
         </div>
-        <div className="grid grid-cols-2 gap-2 p-3">
-          <button className="btn-primary py-2 text-sm" onClick={() => setExpModal("new")}>
-            <Icon name="plus" size={15} /> Ausgabe
-          </button>
-          <button className="btn-ghost py-2 text-sm" onClick={() => setBudModal("new")}>
-            <Icon name="plus" size={15} /> Budgetposten
+        <div className="p-3">
+          <button className="btn-primary w-full py-2 text-sm" onClick={() => setExpModal("new")}>
+            <Icon name="plus" size={15} /> Ausgabe erfassen
           </button>
         </div>
       </div>

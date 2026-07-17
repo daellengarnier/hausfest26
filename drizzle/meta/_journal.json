@@ -71,6 +71,13 @@
       "when": 1784284438376,
       "tag": "0009_budget2023",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784287383635,
+      "tag": "0010_shopping",
+      "breakpoints": true
     }
   ]
 }

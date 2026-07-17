@@ -157,6 +157,20 @@ export const subRessorts = pgTable("sub_ressorts", {
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Einkaufsartikel je Ressort/Sub-Ressort (gemeinsame Einkaufsliste).
+export const shoppingItems = pgTable("shopping_items", {
+  id: serial("id").primaryKey(),
+  ressortId: integer("ressortId")
+    .notNull()
+    .references(() => ressorts.id, { onDelete: "cascade" }),
+  subRessortId: integer("subRessortId").references(() => subRessorts.id, { onDelete: "set null" }),
+  titel: text("titel").notNull(),
+  menge: text("menge").notNull().default(""),
+  erledigt: boolean("erledigt").notNull().default(false),
+  createdBy: integer("createdBy").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const todos = pgTable("todos", {
   id: serial("id").primaryKey(),
   ressortId: integer("ressortId")
