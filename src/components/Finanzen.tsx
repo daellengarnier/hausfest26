@@ -128,27 +128,27 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
                 const isOpen = open[k.kategorie];
                 return (
                   <div key={k.kategorie} className="card overflow-hidden">
-                    <div className="flex items-center gap-2 px-3 py-2.5">
-                      <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setOpen((o) => ({ ...o, [k.kategorie]: !o[k.kategorie] }))}>
-                        <Icon name="chevron" size={15} className={`shrink-0 text-stone-400 transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-ink">{k.kategorie}</span>
-                          <span className="mt-1 block h-1.5 w-full overflow-hidden rounded-full" style={{ background: "#efe7d8" }}>
-                            <span className="block h-full rounded-full" style={{ width: `${width}%`, background: over || noPlan ? "#c2453d" : color }} />
-                          </span>
-                        </span>
-                      </button>
-                      <div className="shrink-0 text-right">
-                        <span className="block text-sm font-bold tabular-nums text-ink">CHF {formatChf(k.ist)}</span>
-                        <button
-                          className={`block text-xs tabular-nums text-stone-400 ${isAdmin ? "underline decoration-dotted underline-offset-2" : "cursor-default"}`}
-                          onClick={() => isAdmin && setBudModal({ kategorie: k.kategorie, betragCents: k.plan })}
-                          disabled={!isAdmin}
-                        >
-                          / {k.plan > 0 ? formatChf(k.plan) : "–"}
+                    <div className="px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setOpen((o) => ({ ...o, [k.kategorie]: !o[k.kategorie] }))}>
+                          <Icon name="chevron" size={15} className={`shrink-0 text-stone-400 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{k.kategorie}</span>
                         </button>
+                        <div className="shrink-0 text-right">
+                          <span className="block text-sm font-bold tabular-nums text-ink">CHF {formatChf(k.ist)}</span>
+                          <button
+                            className={`block text-xs tabular-nums text-stone-400 ${isAdmin ? "underline decoration-dotted underline-offset-2" : "cursor-default"}`}
+                            onClick={() => isAdmin && setBudModal({ kategorie: k.kategorie, betragCents: k.plan })}
+                            disabled={!isAdmin}
+                          >
+                            / {k.plan > 0 ? formatChf(k.plan) : "–"}
+                          </button>
+                        </div>
                       </div>
+                      <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full" style={{ background: "#efe7d8" }}>
+                        <span className="block h-full rounded-full" style={{ width: `${width}%`, background: over || noPlan ? "#c2453d" : color }} />
+                      </span>
                     </div>
                     {isOpen && (
                       <div className="divide-y divide-stone-100 border-t border-stone-100">
