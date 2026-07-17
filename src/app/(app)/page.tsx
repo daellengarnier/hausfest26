@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/apiClient";
-import { EmptyState, Spinner } from "@/components/Ui";
+import { Avatar, EmptyState, Spinner } from "@/components/Ui";
 import { Icon } from "@/components/Icon";
 import { ressortIcon } from "@/lib/ressortIcon";
 import { ressortHint } from "@/lib/ressortHint";
@@ -28,7 +28,14 @@ export default function WelcomePage() {
   const [ressorts, setRessorts] = useState<RessortSummary[] | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState("");
   const [hi, setHi] = useState("Hallo");
+
+  const copyLink = (url: string, key: string) =>
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopiedLink(key);
+      setTimeout(() => setCopiedLink(""), 1400);
+    });
 
   useEffect(() => {
     setHi(greeting());
@@ -46,13 +53,23 @@ export default function WelcomePage() {
           {hi}, <span className="brand-text">{user?.name}</span>
         </h1>
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary py-2 text-sm">
-            <Icon name="ticket" size={15} /> Tickets
-          </a>
-          <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost py-2 text-sm">
-            <Icon name="calendar" size={15} /> Schichtplan
-          </a>
+        <div className="mt-3 space-y-2">
+          <div className="flex gap-2">
+            <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 py-2 text-sm">
+              <Icon name="ticket" size={15} /> Tickets öffnen
+            </a>
+            <button className="btn-ghost px-3 py-2 text-sm" onClick={() => copyLink(TICKET_URL, "ticket")} aria-label="Ticket-Link kopieren">
+              <Icon name={copiedLink === "ticket" ? "check" : "copy"} size={16} /> {copiedLink === "ticket" ? "Kopiert" : "Link"}
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost flex-1 py-2 text-sm">
+              <Icon name="calendar" size={15} /> Schichtplan öffnen
+            </a>
+            <button className="btn-ghost px-3 py-2 text-sm" onClick={() => copyLink(SCHICHT_URL, "schicht")} aria-label="Schichtplan-Link kopieren">
+              <Icon name={copiedLink === "schicht" ? "check" : "copy"} size={16} /> {copiedLink === "schicht" ? "Kopiert" : "Link"}
+            </button>
+          </div>
         </div>
         <p className="mt-2 text-xs text-stone-500">
           Ticket-Passwort:{" "}
@@ -92,6 +109,16 @@ export default function WelcomePage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-ink">{r.name}</p>
                   {ressortHint(r) && <p className="truncate text-xs text-stone-400">{ressortHint(r)}</p>}
+                  {r.leads.length > 0 && (
+                    <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-stone-400">
+                      {r.leads.map((l) => (
+                        <span key={l.id} className="inline-flex items-center gap-1">
+                          <Avatar name={l.name} color={l.avatarColor} size={14} userId={l.id} showName={false} />
+                          {l.name}
+                        </span>
+                      ))}
+                    </p>
+                  )}
                 </div>
                 {r.openTodos > 0 && (
                   <span className="chip shrink-0" style={{ background: `${r.farbe}1c`, color: r.farbe }}>

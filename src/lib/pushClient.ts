@@ -40,6 +40,13 @@ export async function enablePush(): Promise<PushResult> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(sub),
     });
+    if (res.ok) {
+      try {
+        window.dispatchEvent(new Event("hausfest:push-enabled"));
+      } catch {
+        /* ignorieren */
+      }
+    }
     return { ok: res.ok, error: res.ok ? undefined : "Abo konnte nicht gespeichert werden." };
   } catch {
     return { ok: false, error: "Abo fehlgeschlagen." };

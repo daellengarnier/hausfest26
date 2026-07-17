@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { api } from "@/lib/apiClient";
 import { Avatar, EmptyState, Modal, Spinner } from "@/components/Ui";
 import { TodoRow } from "@/components/TodoRow";
@@ -22,11 +22,20 @@ interface DetailResponse {
   protocols: ProtocolRef[];
 }
 
+type TabKey = "todos" | "pinnwand" | "zeitplan" | "bars" | "finanzen" | "acts";
+const TAB_KEYS: TabKey[] = ["todos", "pinnwand", "zeitplan", "bars", "finanzen", "acts"];
+
 export default function RessortPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const ressortId = Number(params.id);
   const [data, setData] = useState<DetailResponse | null>(null);
-  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | "bars" | "finanzen" | "acts" | null>(null);
+  // Startet ggf. auf dem via ?tab=… verlinkten Tab (z. B. aus einer Benachrichtigung).
+  const initialTab = (() => {
+    const t = searchParams.get("tab");
+    return t && (TAB_KEYS as string[]).includes(t) ? (t as TabKey) : null;
+  })();
+  const [tab, setTab] = useState<TabKey | null>(initialTab);
   const [error, setError] = useState("");
   const [todoModal, setTodoModal] = useState<{ open: boolean; subId: number | null }>({ open: false, subId: null });
   const [createSeq, setCreateSeq] = useState(0); // erzwingt frisches Todo-Formular bei jedem Öffnen
@@ -57,8 +66,8 @@ export default function RessortPage() {
   const todosBySub = (subId: number) => todos.filter((t) => t.subRessortId === subId);
   const openTodoCount = todos.filter((t) => t.status !== "erledigt").length;
   // Spezialansichten öffnen standardmäßig ihren eigenen Tab.
-  // Spezial-Ressorts (Line-up/Acts) brauchen keine Todos/Pinnwand.
-  const spezial = !!ressort.hatZeitplan || !!ressort.hatActs;
+  // Programmübersicht (Line-up/Bars) braucht keine Todos/Pinnwand; Acts schon.
+  const spezial = !!ressort.hatZeitplan;
   const activeTab = tab ?? (ressort.hatActs ? "acts" : ressort.hatFinanzen ? "finanzen" : ressort.hatZeitplan ? "zeitplan" : "todos");
 
   return (

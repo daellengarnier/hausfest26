@@ -79,7 +79,7 @@ export default function MinePage() {
           {mentioned.map((m) => (
             <Link
               key={m.commentId}
-              href={m.parentTyp === "todo" ? `/todo/${m.parentId}` : `/ressort/${m.parentId}`}
+              href={m.parentTyp === "todo" ? `/todo/${m.parentId}` : `/ressort/${m.parentId}?tab=pinnwand`}
               className="block px-4 py-3 active:bg-slate-50"
             >
               <div className="flex items-baseline justify-between">

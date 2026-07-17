@@ -15,7 +15,7 @@ const PUSH_TITLE: Record<ActivityTyp, string> = {
 
 function refUrl(refTyp: string, refId: number): string {
   if (refTyp === "todo") return `/todo/${refId}`;
-  if (refTyp === "ressort") return `/ressort/${refId}`;
+  if (refTyp === "ressort") return `/ressort/${refId}?tab=pinnwand`;
   if (refTyp === "meeting" || refTyp === "sitzung") return `/meetings/${refId}`;
   return "/inbox";
 }

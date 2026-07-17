@@ -22,7 +22,7 @@ export default function EinkaufPage() {
       <div className="px-1 pt-1">
         <h1 className="text-2xl font-extrabold tracking-tight text-ink">Einkaufsliste</h1>
         <p className="mt-0.5 text-sm text-stone-500">
-          {totalOffen > 0 ? `${totalOffen} Artikel offen – pro Ressort & Sub-Ressort` : "Artikel je Ressort & Sub-Ressort erfassen"}
+          {totalOffen > 0 ? `${totalOffen} Artikel offen – aufklappbar pro Ressort` : "Artikel je Ressort erfassen"}
         </p>
       </div>
 
@@ -51,10 +51,7 @@ export default function EinkaufPage() {
                 </button>
                 {isOpen && (
                   <div className="border-t border-stone-100">
-                    <Section groupId={g.id} subId={null} label="Allgemein" items={g.items.filter((i) => i.subRessortId === null)} onChanged={load} />
-                    {g.subRessorts.map((s) => (
-                      <Section key={s.id} groupId={g.id} subId={s.id} label={s.name} items={g.items.filter((i) => i.subRessortId === s.id)} onChanged={load} />
-                    ))}
+                    <Section groupId={g.id} items={g.items} onChanged={load} />
                   </div>
                 )}
               </div>
@@ -68,14 +65,10 @@ export default function EinkaufPage() {
 
 function Section({
   groupId,
-  subId,
-  label,
   items,
   onChanged,
 }: {
   groupId: number;
-  subId: number | null;
-  label: string;
   items: ShoppingItem[];
   onChanged: () => void;
 }) {
@@ -86,7 +79,7 @@ function Section({
     if (!titel.trim() || busy) return;
     setBusy(true);
     try {
-      await api.post("/shopping", { ressortId: groupId, subRessortId: subId, titel: titel.trim() });
+      await api.post("/shopping", { ressortId: groupId, titel: titel.trim() });
       setTitel("");
       onChanged();
     } finally {
@@ -94,10 +87,8 @@ function Section({
     }
   };
 
-  // "Allgemein" nur zeigen, wenn Artikel vorhanden – oder immer als Fallback? Immer, damit man erfassen kann.
   return (
-    <div className="border-b border-stone-100 last:border-b-0">
-      <p className="px-3 pt-2.5 text-xs font-bold uppercase tracking-wide text-stone-400">{label}</p>
+    <div>
       <div className="px-1 py-1">
         {items.map((it) => (
           <ItemRow key={it.id} item={it} onChanged={onChanged} />

@@ -202,7 +202,7 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
         <ExpenseModal
           ressortId={ressortId}
           expense={expModal === "new" ? null : expModal}
-          canDelete={expModal !== "new" && (expModal.userId === user?.id || isAdmin)}
+          canDelete={expModal !== "new"}
           onClose={() => setExpModal(null)}
           onSaved={() => {
             setExpModal(null);

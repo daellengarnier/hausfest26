@@ -15,15 +15,24 @@ export function PushPrompt() {
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    if (!pushSupported()) return;
-    if (Notification.permission !== "default") return; // schon entschieden
+    // Sobald Push (irgendwo) aktiviert wurde, Banner sofort ausblenden.
+    const onEnabled = () => setShow(false);
+    window.addEventListener("hausfest:push-enabled", onEnabled);
+    if (!pushSupported() || Notification.permission !== "default") {
+      window.removeEventListener("hausfest:push-enabled", onEnabled);
+      return;
+    }
     try {
       const snoozed = localStorage.getItem(SNOOZE_KEY);
-      if (snoozed && Date.now() - Number(snoozed) < SNOOZE_MS) return;
+      if (snoozed && Date.now() - Number(snoozed) < SNOOZE_MS) {
+        window.removeEventListener("hausfest:push-enabled", onEnabled);
+        return;
+      }
     } catch {
       /* ignorieren */
     }
     setShow(true);
+    return () => window.removeEventListener("hausfest:push-enabled", onEnabled);
   }, []);
 
   if (!show) return null;
