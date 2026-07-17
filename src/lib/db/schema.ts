@@ -51,6 +51,36 @@ export const ressorts = pgTable("ressorts", {
   reihenfolge: integer("reihenfolge").notNull().default(0),
   // Ressorts mit Zeitplan (z. B. Programm) zeigen einen zusätzlichen Timeline-Tab.
   hatZeitplan: boolean("hatZeitplan").notNull().default(false),
+  // Ressort Finanzen bekommt eine Ausgaben-/Belegverwaltung.
+  hatFinanzen: boolean("hatFinanzen").notNull().default(false),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Datei-Uploads (Belege, Rider …) – klein gehalten, base64 in der DB.
+export const attachments = pgTable("attachments", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  mime: text("mime").notNull().default("application/octet-stream"),
+  size: integer("size").notNull().default(0),
+  dataB64: text("dataB64").notNull(),
+  uploadedBy: integer("uploadedBy").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Ausgaben/Belege. Betrag in Rappen (Integer) gegen Rundungsfehler.
+// userId = wer ausgelegt hat (der/die es dem eigenen Konto zuschreibt).
+export const expenses = pgTable("expenses", {
+  id: serial("id").primaryKey(),
+  ressortId: integer("ressortId")
+    .notNull()
+    .references(() => ressorts.id, { onDelete: "cascade" }),
+  userId: integer("userId").references(() => users.id, { onDelete: "set null" }),
+  betragCents: integer("betragCents").notNull(),
+  waehrung: text("waehrung").notNull().default("CHF"),
+  kategorie: text("kategorie").notNull().default("Sonstiges"),
+  beschreibung: text("beschreibung").notNull().default(""),
+  datum: text("datum"), // 'YYYY-MM-DD'
+  belegId: integer("belegId").references(() => attachments.id, { onDelete: "set null" }),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 

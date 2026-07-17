@@ -41,7 +41,31 @@ export interface Ressort {
   beschreibung: string;
   farbe: string;
   hatZeitplan?: boolean;
+  hatFinanzen?: boolean;
   leads: UserLite[];
+}
+
+export interface Attachment {
+  id: number;
+  filename: string;
+  mime: string;
+  size: number;
+}
+
+export interface Expense {
+  id: number;
+  betragCents: number;
+  waehrung: string;
+  kategorie: string;
+  beschreibung: string;
+  datum: string | null;
+  createdAt: string;
+  userId: number | null;
+  userName: string | null;
+  userColor: string | null;
+  belegId: number | null;
+  belegMime: string | null;
+  belegFilename: string | null;
 }
 
 export type BoardKind = "programm" | "bars";

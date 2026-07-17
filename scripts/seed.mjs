@@ -19,7 +19,7 @@ const RESSORTS = [
   { name: "Promo", farbe: "#eab308", subs: [] },
   { name: "Deko", farbe: "#22c55e", subs: ["Treppenhaus", "Club", "Pyramide", "Garten", "WG Nordwind", "WG Ostblock", "WG Dreiecksbar", "WG Kleenex", "Family-WG", "WG Bonzen"] },
   { name: "Sicherheit & Awareness", farbe: "#ef4444", subs: ["Fluchtplan", "Awareness", "Sanipoint", "Sicherheitskonzept"] },
-  { name: "Finanzen", farbe: "#8b5cf6", subs: ["Budget/Abrechnung", "Defizitgarantie"] },
+  { name: "Finanzen", farbe: "#8b5cf6", finanzen: true, subs: ["Budget/Abrechnung", "Defizitgarantie"] },
 ];
 
 const sql = postgres(url, { max: 1, prepare: false });
@@ -36,8 +36,8 @@ try {
     let order = 1;
     for (const r of RESSORTS) {
       const [row] = await tx`
-        INSERT INTO ressorts (name, beschreibung, farbe, reihenfolge, "hatZeitplan")
-        VALUES (${r.name}, ${""}, ${r.farbe}, ${order++}, ${r.zeitplan ?? false})
+        INSERT INTO ressorts (name, beschreibung, farbe, reihenfolge, "hatZeitplan", "hatFinanzen")
+        VALUES (${r.name}, ${""}, ${r.farbe}, ${order++}, ${r.zeitplan ?? false}, ${r.finanzen ?? false})
         RETURNING id`;
       let sOrder = 1;
       for (const sub of r.subs) {

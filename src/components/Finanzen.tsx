@@ -1,0 +1,323 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { api } from "@/lib/apiClient";
+import { useAuth } from "./AuthContext";
+import { Avatar, EmptyState, Modal, Spinner } from "./Ui";
+import { Icon } from "./Icon";
+import { EXPENSE_CATEGORIES, CATEGORY_COLOR, formatChf } from "@/lib/finance";
+import { formatDate } from "@/lib/uiUtil";
+import type { Attachment, Expense } from "@/lib/uiTypes";
+
+function parseChf(s: string): number {
+  const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9.]/g, ""));
+  return Number.isFinite(v) ? Math.round(v * 100) : NaN;
+}
+
+export function Finanzen({ ressortId }: { ressortId: number }) {
+  const { user } = useAuth();
+  const [expenses, setExpenses] = useState<Expense[] | null>(null);
+  const [modal, setModal] = useState<Expense | "new" | null>(null);
+  const [filter, setFilter] = useState<string>("");
+
+  const load = () => api.get<{ expenses: Expense[] }>(`/expenses?ressortId=${ressortId}`).then((d) => setExpenses(d.expenses));
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ressortId]);
+
+  const { mineCents, totalCents, byCat, byUser } = useMemo(() => {
+    const list = expenses ?? [];
+    let mine = 0,
+      total = 0;
+    const cat = new Map<string, number>();
+    const usr = new Map<number, { name: string; color: string; cents: number }>();
+    for (const e of list) {
+      total += e.betragCents;
+      if (e.userId === user?.id) mine += e.betragCents;
+      cat.set(e.kategorie, (cat.get(e.kategorie) ?? 0) + e.betragCents);
+      if (e.userId != null) {
+        const cur = usr.get(e.userId) ?? { name: e.userName ?? "?", color: e.userColor ?? "#8a8172", cents: 0 };
+        cur.cents += e.betragCents;
+        usr.set(e.userId, cur);
+      }
+    }
+    return {
+      mineCents: mine,
+      totalCents: total,
+      byCat: [...cat.entries()].sort((a, b) => b[1] - a[1]),
+      byUser: [...usr.values()].sort((a, b) => b.cents - a.cents),
+    };
+  }, [expenses, user]);
+
+  const shown = (expenses ?? []).filter((e) => !filter || e.kategorie === filter);
+
+  return (
+    <div className="space-y-4">
+      {/* Meine Ausgaben */}
+      <div className="card overflow-hidden">
+        <div className="brand-gradient px-5 py-4 text-white">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/80">Meine Ausgaben</p>
+          <p className="text-3xl font-extrabold">CHF {formatChf(mineCents)}</p>
+          <p className="mt-0.5 text-xs text-white/80">von total CHF {formatChf(totalCents)} im Ressort</p>
+        </div>
+        <div className="p-3">
+          <button className="btn-primary w-full" onClick={() => setModal("new")}>
+            <Icon name="plus" size={17} /> Ausgabe erfassen
+          </button>
+        </div>
+      </div>
+
+      {expenses === null ? (
+        <Spinner label="Lade Ausgaben …" />
+      ) : (
+        <>
+          {/* Aufteilung nach Kategorie */}
+          {byCat.length > 0 && (
+            <div className="card p-4">
+              <h3 className="mb-2 text-sm font-bold text-stone-500">Nach Kategorie</h3>
+              <div className="space-y-1.5">
+                {byCat.map(([k, c]) => (
+                  <button
+                    key={k}
+                    onClick={() => setFilter(filter === k ? "" : k)}
+                    className={`flex w-full items-center gap-2 rounded-lg px-1 py-0.5 text-sm ${filter === k ? "bg-stone-100" : ""}`}
+                  >
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: CATEGORY_COLOR[k] ?? "#8a8172" }} />
+                    <span className="flex-1 text-left text-stone-700">{k}</span>
+                    <span className="font-semibold">CHF {formatChf(c)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Aufteilung nach Person */}
+          {byUser.length > 1 && (
+            <div className="card p-4">
+              <h3 className="mb-2 text-sm font-bold text-stone-500">Nach Person</h3>
+              <div className="space-y-2">
+                {byUser.map((u) => (
+                  <div key={u.name} className="flex items-center gap-2 text-sm">
+                    <Avatar name={u.name} color={u.color} size={22} />
+                    <span className="flex-1 text-stone-700">{u.name}</span>
+                    <span className="font-semibold">CHF {formatChf(u.cents)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Liste */}
+          {filter && (
+            <button className="text-xs font-medium text-accent-dark" onClick={() => setFilter("")}>
+              Filter &bdquo;{filter}&ldquo; aufheben
+            </button>
+          )}
+          {shown.length === 0 ? (
+            <EmptyState title="Noch keine Ausgaben" hint="Erfasse deine erste Ausgabe – Beleg fotografieren, Rest wird (mit KI) vorausgefüllt." />
+          ) : (
+            <div className="card divide-y divide-stone-100 overflow-hidden">
+              {shown.map((e) => {
+                const mine = e.userId === user?.id;
+                return (
+                  <button key={e.id} onClick={() => setModal(e)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left active:bg-stone-50">
+                    <span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: CATEGORY_COLOR[e.kategorie] ?? "#8a8172" }} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-ink">{e.beschreibung || e.kategorie}</p>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
+                        <span className="chip bg-stone-100 text-stone-600">{e.kategorie}</span>
+                        {e.datum && <span>{formatDate(e.datum)}</span>}
+                        {e.userName && <span>· {mine ? "du" : e.userName}</span>}
+                        {e.belegId && <Icon name="ticket" size={13} className="text-stone-400" />}
+                      </div>
+                    </div>
+                    <span className="shrink-0 font-bold text-ink">CHF {formatChf(e.betragCents)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {modal && (
+        <ExpenseModal
+          ressortId={ressortId}
+          expense={modal === "new" ? null : modal}
+          canDelete={modal !== "new" && (modal.userId === user?.id || user?.rolle === "admin")}
+          onClose={() => setModal(null)}
+          onSaved={() => {
+            setModal(null);
+            load();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ExpenseModal({
+  ressortId,
+  expense,
+  canDelete,
+  onClose,
+  onSaved,
+}: {
+  ressortId: number;
+  expense: Expense | null;
+  canDelete: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const editing = !!expense;
+  const [betrag, setBetrag] = useState(expense ? (expense.betragCents / 100).toFixed(2) : "");
+  const [kategorie, setKategorie] = useState(expense?.kategorie ?? "Sonstiges");
+  const [beschreibung, setBeschreibung] = useState(expense?.beschreibung ?? "");
+  const [datum, setDatum] = useState(expense?.datum ?? "");
+  const [beleg, setBeleg] = useState<Attachment | null>(
+    expense?.belegId ? { id: expense.belegId, filename: expense.belegFilename ?? "Beleg", mime: expense.belegMime ?? "", size: 0 } : null,
+  );
+  const [uploading, setUploading] = useState(false);
+  const [scanNote, setScanNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onFile = async (f: File) => {
+    setUploading(true);
+    setScanNote("");
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+      const res = await fetch("/api/attachments", { method: "POST", body: fd, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Upload fehlgeschlagen");
+      const { attachment } = (await res.json()) as { attachment: Attachment };
+      setBeleg(attachment);
+      // KI-Auslesen versuchen
+      setScanNote("Beleg wird gelesen …");
+      const scan = await api
+        .post<{ available: boolean; betragCents?: number; datum?: string; kategorie?: string; haendler?: string; error?: string }>(
+          "/expenses/scan",
+          { attachmentId: attachment.id },
+        )
+        .catch(() => null);
+      if (!scan || scan.available === false) {
+        setScanNote("");
+      } else if (scan.error) {
+        setScanNote("KI konnte den Beleg nicht sicher lesen – bitte manuell prüfen.");
+      } else {
+        if (scan.betragCents) setBetrag((scan.betragCents / 100).toFixed(2));
+        if (scan.datum) setDatum(scan.datum);
+        if (scan.kategorie) setKategorie(scan.kategorie);
+        setScanNote(`Erkannt${scan.haendler ? " (" + scan.haendler + ")" : ""} – bitte prüfen.`);
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const save = async () => {
+    const cents = parseChf(betrag);
+    if (!Number.isFinite(cents) || cents <= 0) return setError("Bitte einen gültigen Betrag angeben");
+    setSaving(true);
+    setError("");
+    const payload = { ressortId, betragCents: cents, kategorie, beschreibung: beschreibung.trim(), datum: datum || null, belegId: beleg?.id ?? null };
+    try {
+      if (editing) await api.patch(`/expenses/${expense!.id}`, payload);
+      else await api.post("/expenses", payload);
+      onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    await api.del(`/expenses/${expense!.id}`);
+    onSaved();
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={editing ? "Ausgabe bearbeiten" : "Ausgabe erfassen"}
+      footer={
+        <div className="flex gap-2">
+          {canDelete && (
+            <button className="btn-danger" onClick={remove} aria-label="Löschen">
+              <Icon name="trash" size={17} />
+            </button>
+          )}
+          <button className="btn-ghost flex-1" onClick={onClose}>
+            Abbrechen
+          </button>
+          <button className="btn-primary flex-1" onClick={save} disabled={saving || uploading}>
+            Speichern
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {/* Beleg */}
+        <div>
+          <label className="label">Beleg (Foto/PDF, optional)</label>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,application/pdf"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
+          />
+          {beleg ? (
+            <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm">
+              <Icon name="ticket" size={16} className="text-accent" />
+              <a href={`/api/attachments/${beleg.id}`} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate font-medium text-accent-dark">
+                {beleg.filename}
+              </a>
+              <button className="text-stone-400 hover:text-red-500" onClick={() => setBeleg(null)} aria-label="Beleg entfernen">
+                <Icon name="close" size={15} />
+              </button>
+            </div>
+          ) : (
+            <button className="btn-ghost w-full" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <Icon name="download" size={16} className="rotate-180" /> {uploading ? "Lädt …" : "Beleg hochladen"}
+            </button>
+          )}
+          {scanNote && <p className="mt-1 text-xs text-accent-dark">{scanNote}</p>}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Betrag (CHF)</label>
+            <input className="input" inputMode="decimal" value={betrag} onChange={(e) => setBetrag(e.target.value)} placeholder="0.00" autoFocus />
+          </div>
+          <div>
+            <label className="label">Datum</label>
+            <input type="date" className="input" value={datum ?? ""} onChange={(e) => setDatum(e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <label className="label">Kategorie</label>
+          <select className="input" value={kategorie} onChange={(e) => setKategorie(e.target.value)}>
+            {EXPENSE_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">Beschreibung (optional)</label>
+          <input className="input" value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="z. B. Farbe & Pinsel" />
+        </div>
+        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      </div>
+    </Modal>
+  );
+}

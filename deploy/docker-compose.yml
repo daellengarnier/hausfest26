@@ -35,6 +35,9 @@ services:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
       DATABASE_URL: postgres://${POSTGRES_USER:-hausfest26}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-hausfest26}
+      # Optional: KI-Beleglesung im Finanzen-Modul (leer = manuelle Eingabe).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
     depends_on:
       db:
         condition: service_healthy

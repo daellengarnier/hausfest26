@@ -9,6 +9,7 @@ import { TodoRow } from "@/components/TodoRow";
 import { TodoFormModal } from "@/components/TodoFormModal";
 import { CommentThread } from "@/components/CommentThread";
 import { Zeitplan } from "@/components/Zeitplan";
+import { Finanzen } from "@/components/Finanzen";
 import { relTime } from "@/lib/uiUtil";
 import type { ProtocolRef, Ressort, SubRessort, Todo } from "@/lib/uiTypes";
 import { Icon } from "@/components/Icon";
@@ -24,7 +25,7 @@ export default function RessortPage() {
   const params = useParams<{ id: string }>();
   const ressortId = Number(params.id);
   const [data, setData] = useState<DetailResponse | null>(null);
-  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | "bars" | null>(null);
+  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | "bars" | "finanzen" | null>(null);
   const [error, setError] = useState("");
   const [todoModal, setTodoModal] = useState<{ open: boolean; subId: number | null }>({ open: false, subId: null });
   const [createSeq, setCreateSeq] = useState(0); // erzwingt frisches Todo-Formular bei jedem Öffnen
@@ -54,8 +55,8 @@ export default function RessortPage() {
   const todosWithoutSub = todos.filter((t) => !t.subRessortId);
   const todosBySub = (subId: number) => todos.filter((t) => t.subRessortId === subId);
   const openTodoCount = todos.filter((t) => t.status !== "erledigt").length;
-  // Programm (mit Zeitplan) öffnet standardmäßig im Zeitplan-Tab.
-  const activeTab = tab ?? (ressort.hatZeitplan ? "zeitplan" : "todos");
+  // Spezialansichten öffnen standardmäßig ihren eigenen Tab.
+  const activeTab = tab ?? (ressort.hatFinanzen ? "finanzen" : ressort.hatZeitplan ? "zeitplan" : "todos");
 
   return (
     <div className="space-y-4">
@@ -78,6 +79,11 @@ export default function RessortPage() {
       </div>
 
       <div className="flex gap-1 overflow-x-auto rounded-xl bg-slate-200/70 p-1 text-sm font-medium">
+        {ressort.hatFinanzen && (
+          <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "finanzen" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("finanzen")}>
+            Ausgaben
+          </button>
+        )}
         {ressort.hatZeitplan && (
           <>
             <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "zeitplan" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("zeitplan")}>
@@ -96,7 +102,9 @@ export default function RessortPage() {
         </button>
       </div>
 
-      {activeTab === "zeitplan" ? (
+      {activeTab === "finanzen" ? (
+        <Finanzen ressortId={ressortId} />
+      ) : activeTab === "zeitplan" ? (
         <Zeitplan ressortId={ressortId} board="programm" mode="acts" />
       ) : activeTab === "bars" ? (
         <Zeitplan ressortId={ressortId} board="bars" mode="bars" />
