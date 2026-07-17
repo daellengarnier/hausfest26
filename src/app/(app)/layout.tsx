@@ -79,8 +79,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <path d="M12 3 21 20 H3 Z" fill="currentColor" />
               </svg>
             </span>
-            <span className="text-lg font-extrabold tracking-tight text-ink">
-              Hausfest <span className="brand-text">26</span>
+            <span className="flex flex-col leading-none">
+              <span className="text-lg font-extrabold tracking-tight text-ink">
+                Hausfest <span className="brand-text">26</span>
+              </span>
+              <span className="mt-0.5 text-[10px] font-medium text-stone-500">33 Jahre Via · 10 Jahre Spinnerei</span>
             </span>
           </Link>
           <div className="relative" ref={menuRef}>

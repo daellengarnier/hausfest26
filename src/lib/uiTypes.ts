@@ -29,6 +29,7 @@ export interface RessortSummary {
   reihenfolge: number;
   hatZeitplan?: boolean;
   hatActs?: boolean;
+  hatFinanzen?: boolean;
   leads: UserLite[];
   openTodos: number;
   totalTodos: number;

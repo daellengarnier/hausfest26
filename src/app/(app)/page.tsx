@@ -6,6 +6,7 @@ import { api } from "@/lib/apiClient";
 import { EmptyState, Spinner } from "@/components/Ui";
 import { Icon } from "@/components/Icon";
 import { ressortIcon } from "@/lib/ressortIcon";
+import { ressortHint } from "@/lib/ressortHint";
 import { useAuth } from "@/components/AuthContext";
 import type { RessortSummary } from "@/lib/uiTypes";
 
@@ -39,19 +40,12 @@ export default function WelcomePage() {
 
   return (
     <div className="space-y-4">
-      {/* Begrüssung – ausserhalb der Box, etwas grösser */}
-      <h1 className="px-1 pt-1 text-2xl font-extrabold tracking-tight text-ink">
-        {hi}, <span className="brand-text">{user?.name}</span>
-      </h1>
+      {/* Begrüssung + Links – ohne Box, direkt auf dem Hintergrund */}
+      <div className="px-1 pt-1">
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">
+          {hi}, <span className="brand-text">{user?.name}</span>
+        </h1>
 
-      {/* Titel + Links – kompakte Box */}
-      <div className="card p-4">
-        <p className="text-lg font-extrabold tracking-tight text-ink">
-          Hausfest <span className="brand-text">2026</span>
-        </p>
-        <p className="mt-0.5 text-sm text-stone-500">33 Jahre Via · 10 Jahre Spinnerei</p>
-
-        {/* Buttons – kleiner */}
         <div className="mt-3 grid grid-cols-2 gap-2">
           <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary py-2 text-sm">
             <Icon name="ticket" size={15} /> Tickets
@@ -60,7 +54,7 @@ export default function WelcomePage() {
             <Icon name="calendar" size={15} /> Schichtplan
           </a>
         </div>
-        <p className="mt-2 text-center text-xs text-stone-500">
+        <p className="mt-2 text-xs text-stone-500">
           Ticket-Passwort:{" "}
           <button
             onClick={() =>
@@ -96,14 +90,11 @@ export default function WelcomePage() {
                   <Icon name={ressortIcon(r.name)} size={19} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate font-semibold text-ink">{r.name}</p>
-                    {r.hatZeitplan && <span className="chip bg-accent/10 text-accent-dark">Line-up</span>}
-                    {r.hatActs && <span className="chip bg-accent/10 text-accent-dark">Acts</span>}
-                  </div>
+                  <p className="truncate font-semibold text-ink">{r.name}</p>
+                  {ressortHint(r) && <p className="truncate text-xs text-stone-400">{ressortHint(r)}</p>}
                 </div>
                 {r.openTodos > 0 && (
-                  <span className="chip" style={{ background: `${r.farbe}1c`, color: r.farbe }}>
+                  <span className="chip shrink-0" style={{ background: `${r.farbe}1c`, color: r.farbe }}>
                     {r.openTodos} offen
                   </span>
                 )}
