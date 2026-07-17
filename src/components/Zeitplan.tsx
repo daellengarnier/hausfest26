@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/apiClient";
 import { Modal, Spinner } from "./Ui";
-import type { BoardKind, ScheduleEntry, ScheduleFloor, ScheduleMarker } from "@/lib/uiTypes";
+import type { Attachment, BoardKind, ScheduleEntry, ScheduleFloor, ScheduleMarker } from "@/lib/uiTypes";
 import { Icon } from "@/components/Icon";
 
 // Zeitachse: 16:00 (min 0) bis 08:00 des Folgetags (min 960), vertikal nach unten.
 const START_HOUR = 16;
 const SPAN = 960;
 const STEP = 15;
-const PX_PER_MIN = 1.5;
-const TIME_W = 50;
-const COL_W = 128;
-const HEADER_H = 44;
+const PX_PER_MIN = 1.05; // kompakter: 960 min → ~1008 px
+const TIME_W = 42;
+const COL_W = 104;
+const HEADER_H = 34;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 function minToLabel(min: number): string {
@@ -111,28 +111,23 @@ export function Zeitplan({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="font-semibold">{mode === "bars" ? "Öffnungszeiten" : "Line-up"}</h2>
-          <p className="text-xs text-slate-500">16:00 – 08:00 · nach unten scrollen</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button className="btn-ghost px-3 py-2 text-sm" onClick={() => setMarkerModal("new")}>
-            + Zeitfenster
-          </button>
-          <button className="btn-ghost px-3 py-2 text-sm" onClick={() => setFloorModal(true)}>
-            {L.addCol}
-          </button>
-          <button className="btn-primary px-3 py-2 text-sm" onClick={() => setActModal("new")}>
-            {L.addEntry}
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <h2 className="mr-auto font-semibold">{mode === "bars" ? "Öffnungszeiten" : "Line-up"}</h2>
+        <button className="btn-ghost px-2.5 py-1.5 text-xs" onClick={() => setMarkerModal("new")}>
+          + Zeitfenster
+        </button>
+        <button className="btn-ghost px-2.5 py-1.5 text-xs" onClick={() => setFloorModal(true)}>
+          {L.addCol}
+        </button>
+        <button className="btn-primary px-2.5 py-1.5 text-xs" onClick={() => setActModal("new")}>
+          {L.addEntry}
+        </button>
       </div>
 
       {displayFloors.length === 0 ? (
         <div className="card p-6 text-center text-sm text-slate-500">{L.empty}</div>
       ) : (
-        <div className="card overflow-auto" style={{ maxHeight: "72vh" }}>
+        <div className="card overflow-auto" style={{ maxHeight: "80vh" }}>
           <div style={{ width: TIME_W + gridW, position: "relative" }}>
             {/* Kopfzeile (sticky oben) */}
             <div className="sticky top-0 z-20 flex" style={{ height: HEADER_H }}>
@@ -224,6 +219,9 @@ export function Zeitplan({
                       }}
                       title={`${e.titel || timeStr} · ${timeStr}`}
                     >
+                      {(e.notiz || (e.files?.length ?? 0) > 0 || e.gageCents || e.anzahlLeute) && (
+                        <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-white/90" />
+                      )}
                       {mode === "bars" ? (
                         <>
                           <span className="block truncate text-xs font-semibold leading-tight">{timeStr}</span>
@@ -387,12 +385,37 @@ function EntryModal({
   onSaved: () => void;
 }) {
   const editing = !!entry;
+  const acts = board === "programm";
   const [floor, setFloor] = useState(entry?.floor ?? floors[0] ?? "");
   const [titel, setTitel] = useState(entry?.titel ?? "");
   const [startMin, setStartMin] = useState(entry?.startMin ?? (board === "bars" ? 0 : 4 * 60));
   const [endMin, setEndMin] = useState(entry?.endMin ?? (board === "bars" ? 6 * 60 : 5 * 60));
+  const [notiz, setNotiz] = useState(entry?.notiz ?? "");
+  const [anzahl, setAnzahl] = useState(entry?.anzahlLeute != null ? String(entry.anzahlLeute) : "");
+  const [gage, setGage] = useState(entry?.gageCents != null ? (entry.gageCents / 100).toFixed(2) : "");
+  const [files, setFiles] = useState<Attachment[]>(entry?.files ?? []);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onFile = async (f: File) => {
+    setUploading(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+      const res = await fetch("/api/attachments", { method: "POST", body: fd, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Upload fehlgeschlagen");
+      const { attachment } = (await res.json()) as { attachment: Attachment };
+      setFiles((prev) => [...prev, attachment]);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   const save = async () => {
     if (!floor) return setError("Bitte zuerst einen Eintrag/Ort anlegen");
@@ -400,7 +423,18 @@ function EntryModal({
     if (endMin <= startMin) return setError("Ende muss nach Start liegen");
     setSaving(true);
     setError("");
-    const payload = { board, floor, titel: titel.trim(), startMin, endMin };
+    const gageNum = parseFloat(gage.replace(",", "."));
+    const payload = {
+      board,
+      floor,
+      titel: titel.trim(),
+      startMin,
+      endMin,
+      notiz: notiz.trim(),
+      anzahlLeute: anzahl.trim() ? Number(anzahl) : null,
+      gageCents: Number.isFinite(gageNum) && gageNum > 0 ? Math.round(gageNum * 100) : null,
+      fileIds: files.map((f) => f.id),
+    };
     try {
       if (editing) await api.patch(`/ressorts/${ressortId}/schedule/${entry!.id}`, payload);
       else await api.post(`/ressorts/${ressortId}/schedule`, payload);
@@ -476,6 +510,48 @@ function EntryModal({
             </select>
           </div>
         </div>
+
+        {acts && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Anzahl Leute</label>
+              <input className="input" inputMode="numeric" value={anzahl} onChange={(e) => setAnzahl(e.target.value)} placeholder="z. B. 3" />
+            </div>
+            <div>
+              <label className="label">Gage (CHF)</label>
+              <input className="input" inputMode="decimal" value={gage} onChange={(e) => setGage(e.target.value)} placeholder="0.00" />
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label className="label">Notiz (optional)</label>
+          <textarea className="input min-h-[60px] resize-y" value={notiz} onChange={(e) => setNotiz(e.target.value)} placeholder="Infos, Kontakt, Sonstiges …" />
+        </div>
+
+        {acts && (
+          <div>
+            <label className="label">Dateien (Techrider, Hospitality …)</label>
+            <input ref={fileRef} type="file" accept="image/*,application/pdf,.doc,.docx,.txt" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+            <div className="space-y-1.5">
+              {files.map((f) => (
+                <div key={f.id} className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm">
+                  <Icon name="download" size={15} className="text-accent" />
+                  <a href={`/api/attachments/${f.id}`} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate font-medium text-accent-dark">
+                    {f.filename}
+                  </a>
+                  <button className="text-stone-400 hover:text-red-500" onClick={() => setFiles((prev) => prev.filter((x) => x.id !== f.id))} aria-label="Entfernen">
+                    <Icon name="close" size={15} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button className="btn-ghost mt-1.5 w-full py-2 text-sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <Icon name="download" size={16} className="rotate-180" /> {uploading ? "Lädt …" : "Datei hochladen"}
+            </button>
+          </div>
+        )}
+
         {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
       </div>
     </Modal>

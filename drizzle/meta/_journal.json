@@ -43,6 +43,13 @@
       "when": 1784247860790,
       "tag": "0005_finanzen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784248532446,
+      "tag": "0006_act_details",
+      "breakpoints": true
     }
   ]
 }

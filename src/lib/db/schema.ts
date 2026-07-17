@@ -247,8 +247,26 @@ export const scheduleEntries = pgTable("schedule_entries", {
   titel: text("titel").notNull().default(""),
   startMin: integer("startMin").notNull(),
   endMin: integer("endMin").notNull(),
+  // Zusatzinfos für Acts/Programmpunkte (alles optional).
+  notiz: text("notiz").notNull().default(""),
+  anzahlLeute: integer("anzahlLeute"),
+  gageCents: integer("gageCents"),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Dateien (Techrider, Hospitality …) zu einem Zeitplan-Eintrag.
+export const scheduleEntryFiles = pgTable(
+  "schedule_entry_files",
+  {
+    entryId: integer("entryId")
+      .notNull()
+      .references(() => scheduleEntries.id, { onDelete: "cascade" }),
+    attachmentId: integer("attachmentId")
+      .notNull()
+      .references(() => attachments.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.entryId, t.attachmentId] })],
+);
 
 // Zeitfenster-Marker: dezentes Band über die volle Breite (alle Floors),
 // z. B. „Nachtessen 18:00–20:00". Rein informativ, schwächer als Einträge.

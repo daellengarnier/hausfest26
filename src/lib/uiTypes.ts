@@ -87,6 +87,10 @@ export interface ScheduleEntry {
   titel: string;
   startMin: number; // Minuten seit 16:00
   endMin: number;
+  notiz?: string;
+  anzahlLeute?: number | null;
+  gageCents?: number | null;
+  files?: Attachment[];
 }
 
 export interface ScheduleMarker {

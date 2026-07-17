@@ -1,7 +1,7 @@
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { requireUser, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
-import { scheduleEntries, scheduleFloors, scheduleMarkers, ressorts } from "@/lib/db/schema";
+import { scheduleEntries, scheduleFloors, scheduleMarkers, scheduleEntryFiles, attachments, ressorts } from "@/lib/db/schema";
 import type { BoardKind } from "@/lib/db/schema";
 
 const SPAN = 960; // 16:00 → 08:00 (Folgetag) in Minuten
@@ -11,6 +11,15 @@ function boardOf(v: string | null): BoardKind {
 }
 function validTime(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= SPAN;
+}
+
+async function linkFiles(entryId: number, fileIds: number[]) {
+  const db = getDb();
+  await db.delete(scheduleEntryFiles).where(eq(scheduleEntryFiles.entryId, entryId));
+  const ids = [...new Set(fileIds.map(Number).filter((n) => Number.isFinite(n)))];
+  if (ids.length > 0) {
+    await db.insert(scheduleEntryFiles).values(ids.map((attachmentId) => ({ entryId, attachmentId }))).onConflictDoNothing();
+  }
 }
 
 export async function GET(request: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -26,17 +35,55 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
     .from(scheduleFloors)
     .where(and(eq(scheduleFloors.ressortId, ressortId), eq(scheduleFloors.board, board)))
     .orderBy(asc(scheduleFloors.reihenfolge), asc(scheduleFloors.id));
-  const entries = await db
+  const rawEntries = await db
     .select()
     .from(scheduleEntries)
     .where(and(eq(scheduleEntries.ressortId, ressortId), eq(scheduleEntries.board, board)))
     .orderBy(asc(scheduleEntries.startMin), asc(scheduleEntries.id));
+
+  // Dateien je Eintrag laden.
+  const filesByEntry = new Map<number, { id: number; filename: string; mime: string; size: number }[]>();
+  const entryIds = rawEntries.map((e) => e.id);
+  if (entryIds.length > 0) {
+    const fileRows = await db
+      .select({
+        entryId: scheduleEntryFiles.entryId,
+        id: attachments.id,
+        filename: attachments.filename,
+        mime: attachments.mime,
+        size: attachments.size,
+      })
+      .from(scheduleEntryFiles)
+      .innerJoin(attachments, eq(attachments.id, scheduleEntryFiles.attachmentId))
+      .where(inArray(scheduleEntryFiles.entryId, entryIds));
+    for (const r of fileRows) {
+      const arr = filesByEntry.get(r.entryId) ?? [];
+      arr.push({ id: r.id, filename: r.filename, mime: r.mime, size: r.size });
+      filesByEntry.set(r.entryId, arr);
+    }
+  }
+  const entries = rawEntries.map((e) => ({ ...e, files: filesByEntry.get(e.id) ?? [] }));
+
   const markers = await db
     .select()
     .from(scheduleMarkers)
     .where(and(eq(scheduleMarkers.ressortId, ressortId), eq(scheduleMarkers.board, board)))
     .orderBy(asc(scheduleMarkers.startMin), asc(scheduleMarkers.id));
   return Response.json({ floors, entries, markers });
+}
+
+function extras(body: Record<string, unknown>) {
+  const out: { notiz?: string; anzahlLeute?: number | null; gageCents?: number | null } = {};
+  if (body?.notiz !== undefined) out.notiz = String(body.notiz ?? "");
+  if (body?.anzahlLeute !== undefined) {
+    const n = Number(body.anzahlLeute);
+    out.anzahlLeute = Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+  }
+  if (body?.gageCents !== undefined) {
+    const g = Number(body.gageCents);
+    out.gageCents = Number.isFinite(g) && g > 0 ? Math.round(g) : null;
+  }
+  return out;
 }
 
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -59,7 +106,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
 
   const inserted = await db
     .insert(scheduleEntries)
-    .values({ ressortId, board, floor, titel, startMin, endMin })
+    .values({ ressortId, board, floor, titel, startMin, endMin, ...extras(body) })
     .returning();
+  if (Array.isArray(body?.fileIds)) await linkFiles(inserted[0].id, body.fileIds);
   return Response.json({ entry: inserted[0] }, { status: 201 });
 }
