@@ -186,7 +186,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </main>
 
       <nav className="pb-safe tabbar fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl">
-        <div className="grid grid-cols-3 px-2 pt-1.5">
+        <div className="grid grid-cols-3 px-2 pt-1">
           {TABS.map((t) => {
             const isActive = t.exact ? pathname === t.href : pathname.startsWith(t.href);
             return (
