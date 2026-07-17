@@ -75,8 +75,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center justify-between px-4 py-2.5">
           <Link href="/" className="flex items-center gap-2.5">
             <span className="brand-gradient grid h-9 w-9 place-items-center rounded-2xl text-white shadow-[var(--shadow-pop)]">
-              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-                <path d="M12 5 19 18 H5 Z" fill="currentColor" />
+              <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+                <path d="M12 3 21 20 H3 Z" fill="currentColor" />
               </svg>
             </span>
             <span className="text-lg font-extrabold tracking-tight text-ink">

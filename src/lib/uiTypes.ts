@@ -28,6 +28,7 @@ export interface RessortSummary {
   farbe: string;
   reihenfolge: number;
   hatZeitplan?: boolean;
+  hatActs?: boolean;
   leads: UserLite[];
   openTodos: number;
   totalTodos: number;
@@ -42,6 +43,7 @@ export interface Ressort {
   farbe: string;
   hatZeitplan?: boolean;
   hatFinanzen?: boolean;
+  hatActs?: boolean;
   leads: UserLite[];
 }
 
@@ -68,6 +70,32 @@ export interface Expense {
   belegFilename: string | null;
 }
 
+export type ActRubrik = "techrider" | "hospitality" | "sonstiges";
+
+export interface ActFile {
+  id: number;
+  attachmentId: number;
+  filename: string;
+  mime: string;
+  size: number;
+  rubrik: ActRubrik;
+}
+
+export interface Act {
+  id: number;
+  name: string;
+  typ: "band" | "dj" | "andere";
+  kostenCents: number | null;
+  uebernachtung: boolean;
+  anzahlPersonen: number | null;
+  promotext: string;
+  notiz: string;
+  createdAt: string;
+  createdByName: string | null;
+  files: ActFile[];
+  slot: { entryId: number; floor: string; startMin: number; endMin: number } | null;
+}
+
 export interface BudgetItem {
   id: number;
   kategorie: string;
@@ -78,6 +106,7 @@ export interface BudgetItem {
   createdBy: number | null;
   createdByName: string | null;
   createdByColor: string | null;
+  actId: number | null;
 }
 
 export type BoardKind = "programm" | "bars";
@@ -102,6 +131,7 @@ export interface ScheduleEntry {
   notiz?: string;
   anzahlLeute?: number | null;
   gageCents?: number | null;
+  actId?: number | null;
   files?: Attachment[];
 }
 

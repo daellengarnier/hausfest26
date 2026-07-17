@@ -1,7 +1,7 @@
 import { eq, and, asc, inArray } from "drizzle-orm";
 import { requireUser, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
-import { scheduleEntries, scheduleFloors, scheduleMarkers, scheduleEntryFiles, attachments, ressorts } from "@/lib/db/schema";
+import { scheduleEntries, scheduleFloors, scheduleMarkers, scheduleEntryFiles, attachments, ressorts, acts } from "@/lib/db/schema";
 import type { BoardKind } from "@/lib/db/schema";
 
 const SPAN = 960; // 16:00 → 08:00 (Folgetag) in Minuten
@@ -109,5 +109,19 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     .values({ ressortId, board, floor, titel, startMin, endMin, ...extras(body) })
     .returning();
   if (Array.isArray(body?.fileIds)) await linkFiles(inserted[0].id, body.fileIds);
+
+  // Line-up-Eintrag (Programm) automatisch mit einem Act-„Ordner" verknüpfen,
+  // damit Rider/Kosten/Übernachtung im Acts-Ressort gepflegt werden können.
+  if (board === "programm") {
+    const actsRessort = await db.select({ id: ressorts.id }).from(ressorts).where(eq(ressorts.hatActs, true)).limit(1);
+    if (actsRessort[0]) {
+      const newAct = await db
+        .insert(acts)
+        .values({ ressortId: actsRessort[0].id, name: titel || "Act", createdBy: auth.id })
+        .returning({ id: acts.id });
+      await db.update(scheduleEntries).set({ actId: newAct[0].id }).where(eq(scheduleEntries.id, inserted[0].id));
+      inserted[0].actId = newAct[0].id;
+    }
+  }
   return Response.json({ entry: inserted[0] }, { status: 201 });
 }

@@ -1,13 +1,10 @@
-// Bereiche (nahe an den Ressorts) als gemeinsame Achse für Budget (Plan) & Ist.
+// Kostenstellen als gemeinsame Achse für Budget (Plan) & Ausgaben (Ist).
 export const EXPENSE_CATEGORIES = [
-  "Programm",
   "Essen",
   "Getränke",
+  "Gagen",
   "Deko",
-  "Technik",
-  "Promo",
-  "Sicherheit",
-  "Material/Miete",
+  "Materialmiete",
   "Sonstiges",
 ] as const;
 
@@ -25,15 +22,12 @@ export function formatChf(cents: number): string {
   return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, "'")}.${frac}`;
 }
 
-// Farbton je Bereich (naturnahe Palette).
+// Farbton je Kostenstelle (naturnahe Palette).
 export const CATEGORY_COLOR: Record<string, string> = {
-  Programm: "#b0447a",
   Essen: "#c2703d",
   "Getränke": "#0e8ba3",
+  Gagen: "#8a3ea8",
   Deko: "#4b7f52",
-  Technik: "#6b7280",
-  Promo: "#b08900",
-  Sicherheit: "#c2453d",
-  "Material/Miete": "#7a8f3f",
+  Materialmiete: "#7a8f3f",
   Sonstiges: "#8a8172",
 };

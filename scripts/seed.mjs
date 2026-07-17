@@ -12,7 +12,8 @@ if (!url) {
 
 // Ressorts gemäss Anforderungsprofil (Abschnitt 10), ohne Lead-Zuordnung.
 const RESSORTS = [
-  { name: "Programm", farbe: "#ec4899", zeitplan: true, subs: ["Line-Up Club (Spinnerei)", "Line-Up DJs (Alternativfloor & Spinnerei)"] },
+  { name: "Programmübersicht", farbe: "#ec4899", zeitplan: true, subs: [] },
+  { name: "Acts", farbe: "#d6409f", acts: true, subs: [] },
   { name: "Essen", farbe: "#f97316", subs: [] },
   { name: "Getränke", farbe: "#06b6d4", subs: [] },
   { name: "Technik", farbe: "#64748b", subs: [] },
@@ -36,8 +37,8 @@ try {
     let order = 1;
     for (const r of RESSORTS) {
       const [row] = await tx`
-        INSERT INTO ressorts (name, beschreibung, farbe, reihenfolge, "hatZeitplan", "hatFinanzen")
-        VALUES (${r.name}, ${""}, ${r.farbe}, ${order++}, ${r.zeitplan ?? false}, ${r.finanzen ?? false})
+        INSERT INTO ressorts (name, beschreibung, farbe, reihenfolge, "hatZeitplan", "hatFinanzen", "hatActs")
+        VALUES (${r.name}, ${""}, ${r.farbe}, ${order++}, ${r.zeitplan ?? false}, ${r.finanzen ?? false}, ${r.acts ?? false})
         RETURNING id`;
       let sOrder = 1;
       for (const sub of r.subs) {

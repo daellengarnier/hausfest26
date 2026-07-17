@@ -18,10 +18,9 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [budget, setBudget] = useState<BudgetItem[] | null>(null);
-  const [view, setView] = useState<"ausgaben" | "budget">("ausgaben");
   const [expModal, setExpModal] = useState<Expense | "new" | null>(null);
   const [budModal, setBudModal] = useState<BudgetItem | "new" | null>(null);
-  const [filter, setFilter] = useState<string>("");
+  const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const loadExpenses = () => api.get<{ expenses: Expense[] }>(`/expenses?ressortId=${ressortId}`).then((d) => setExpenses(d.expenses));
   const loadBudget = () => api.get<{ budget: BudgetItem[] }>(`/budget?ressortId=${ressortId}`).then((d) => setBudget(d.budget));
@@ -31,71 +30,78 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ressortId]);
 
-  const { mineCents, totalCents, byCat, byUser } = useMemo(() => {
-    const list = expenses ?? [];
+  const { mineCents, totalIst, totalPlan, byUser, kostenstellen } = useMemo(() => {
+    const exp = expenses ?? [];
+    const bud = budget ?? [];
     let mine = 0,
-      total = 0;
-    const cat = new Map<string, number>();
+      ist = 0,
+      plan = 0;
     const usr = new Map<number, { name: string; color: string; cents: number }>();
-    for (const e of list) {
-      total += e.betragCents;
+    const expByCat = new Map<string, Expense[]>();
+    const budByCat = new Map<string, BudgetItem[]>();
+    for (const e of exp) {
+      ist += e.betragCents;
       if (e.userId === user?.id) mine += e.betragCents;
-      cat.set(e.kategorie, (cat.get(e.kategorie) ?? 0) + e.betragCents);
+      (expByCat.get(e.kategorie) ?? expByCat.set(e.kategorie, []).get(e.kategorie)!).push(e);
       if (e.userId != null) {
         const cur = usr.get(e.userId) ?? { name: e.userName ?? "?", color: e.userColor ?? "#8a8172", cents: 0 };
         cur.cents += e.betragCents;
         usr.set(e.userId, cur);
       }
     }
+    for (const b of bud) {
+      plan += b.betragCents;
+      (budByCat.get(b.kategorie) ?? budByCat.set(b.kategorie, []).get(b.kategorie)!).push(b);
+    }
+    // Reihenfolge: definierte Kostenstellen zuerst, danach evtl. Alt-Kategorien.
+    const order = [...EXPENSE_CATEGORIES] as string[];
+    const all = new Set<string>([...order, ...expByCat.keys(), ...budByCat.keys()]);
+    const rows = [...all]
+      .filter((c) => (expByCat.get(c)?.length ?? 0) > 0 || (budByCat.get(c)?.length ?? 0) > 0)
+      .sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99))
+      .map((c) => {
+        const es = expByCat.get(c) ?? [];
+        const bs = budByCat.get(c) ?? [];
+        return {
+          kategorie: c,
+          ist: es.reduce((s, e) => s + e.betragCents, 0),
+          plan: bs.reduce((s, b) => s + b.betragCents, 0),
+          expenses: es,
+          budget: bs,
+        };
+      });
     return {
       mineCents: mine,
-      totalCents: total,
-      byCat: [...cat.entries()].sort((a, b) => b[1] - a[1]),
+      totalIst: ist,
+      totalPlan: plan,
       byUser: [...usr.values()].sort((a, b) => b.cents - a.cents),
+      kostenstellen: rows,
     };
-  }, [expenses, user]);
+  }, [expenses, budget, user]);
 
-  // Plan (Budget) vs. Ist (Ausgaben) je Bereich.
-  const { planTotal, planVsIst } = useMemo(() => {
-    const plan = new Map<string, number>();
-    for (const b of budget ?? []) plan.set(b.kategorie, (plan.get(b.kategorie) ?? 0) + b.betragCents);
-    const istMap = new Map(byCat);
-    let planSum = 0;
-    for (const v of plan.values()) planSum += v;
-    const keys = new Set<string>([...plan.keys(), ...istMap.keys()]);
-    const rows = [...keys]
-      .map((k) => ({ kategorie: k, plan: plan.get(k) ?? 0, ist: istMap.get(k) ?? 0 }))
-      .sort((a, b) => Math.max(b.plan, b.ist) - Math.max(a.plan, a.ist));
-    return { planTotal: planSum, planVsIst: rows };
-  }, [budget, byCat]);
-
-  const restCents = planTotal - totalCents;
-  const shown = (expenses ?? []).filter((e) => !filter || e.kategorie === filter);
+  const restCents = totalPlan - totalIst;
   const loading = expenses === null || budget === null;
 
   return (
     <div className="space-y-4">
-      {/* Budget-Übersicht: Plan vs. Ist */}
+      {/* Budget-Übersicht */}
       <div className="card overflow-hidden">
         <div className="brand-gradient px-5 py-4 text-white">
           <p className="text-xs font-semibold uppercase tracking-wide text-white/80">Budget-Übersicht</p>
           <div className="mt-1 flex items-end justify-between gap-3">
             <div>
               <p className="text-xs text-white/70">Ausgegeben (Ist)</p>
-              <p className="text-3xl font-extrabold leading-tight">CHF {formatChf(totalCents)}</p>
+              <p className="text-3xl font-extrabold leading-tight">CHF {formatChf(totalIst)}</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-white/70">Budget (Plan)</p>
-              <p className="text-lg font-bold leading-tight">CHF {formatChf(planTotal)}</p>
+              <p className="text-lg font-bold leading-tight">CHF {formatChf(totalPlan)}</p>
             </div>
           </div>
-          {planTotal > 0 && (
+          {totalPlan > 0 && (
             <div className="mt-3">
               <div className="h-2 w-full overflow-hidden rounded-full bg-white/25">
-                <div
-                  className="h-full rounded-full bg-white/90"
-                  style={{ width: `${Math.min(100, planTotal ? (totalCents / planTotal) * 100 : 0)}%` }}
-                />
+                <div className="h-full rounded-full bg-white/90" style={{ width: `${Math.min(100, (totalIst / totalPlan) * 100)}%` }} />
               </div>
               <p className="mt-1.5 text-xs text-white/85">
                 {restCents >= 0 ? `Noch CHF ${formatChf(restCents)} im Budget` : `CHF ${formatChf(-restCents)} über Budget`}
@@ -104,139 +110,100 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
           )}
           <p className="mt-2 text-xs text-white/75">Meine Ausgaben: CHF {formatChf(mineCents)}</p>
         </div>
+        <div className="grid grid-cols-2 gap-2 p-3">
+          <button className="btn-primary py-2 text-sm" onClick={() => setExpModal("new")}>
+            <Icon name="plus" size={15} /> Ausgabe
+          </button>
+          <button className="btn-ghost py-2 text-sm" onClick={() => setBudModal("new")}>
+            <Icon name="plus" size={15} /> Budgetposten
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <Spinner label="Lade Finanzen …" />
       ) : (
         <>
-          {/* Plan vs. Ist je Bereich */}
-          {planVsIst.length > 0 && (
-            <div className="card p-4">
-              <h3 className="mb-3 text-sm font-bold text-stone-500">Plan vs. Ist je Bereich</h3>
-              <div className="space-y-3">
-                {planVsIst.map((r) => {
-                  const color = CATEGORY_COLOR[r.kategorie] ?? "#8a8172";
-                  const over = r.plan > 0 && r.ist > r.plan;
-                  const noPlan = r.plan === 0 && r.ist > 0;
-                  const pct = r.plan > 0 ? Math.min(100, (r.ist / r.plan) * 100) : r.ist > 0 ? 100 : 0;
+          {/* Kostenstellen (Plan vs. Ist, aufklappbar) */}
+          <div>
+            <h3 className="mb-2 px-1 text-sm font-bold text-stone-500">Kostenstellen</h3>
+            {kostenstellen.length === 0 ? (
+              <EmptyState title="Noch keine Einträge" hint="Erfasse eine Ausgabe oder plane ein Budget – oder trage bei einem Act eine Gage ein." />
+            ) : (
+              <div className="space-y-2">
+                {kostenstellen.map((k) => {
+                  const color = CATEGORY_COLOR[k.kategorie] ?? "#8a8172";
+                  const over = k.plan > 0 && k.ist > k.plan;
+                  const noPlan = k.plan === 0 && k.ist > 0;
+                  const width = k.plan > 0 ? Math.min(100, (k.ist / k.plan) * 100) : k.ist > 0 ? 100 : 0;
+                  const isOpen = open[k.kategorie];
                   return (
-                    <div key={r.kategorie}>
-                      <div className="mb-1 flex items-center gap-2 text-sm">
+                    <div key={k.kategorie} className="card overflow-hidden">
+                      <button className="flex w-full items-center gap-2 px-3 py-2.5 text-left" onClick={() => setOpen((o) => ({ ...o, [k.kategorie]: !o[k.kategorie] }))}>
+                        <Icon name="chevron" size={15} className={`shrink-0 text-stone-400 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                         <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
-                        <span className="flex-1 truncate text-stone-700">{r.kategorie}</span>
-                        <span className="tabular-nums font-semibold text-ink">CHF {formatChf(r.ist)}</span>
-                        <span className="tabular-nums text-xs text-stone-400">/ {r.plan > 0 ? formatChf(r.plan) : "–"}</span>
-                      </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${pct}%`, background: over || noPlan ? "#c2453d" : color }}
-                        />
-                      </div>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-ink">{k.kategorie}</span>
+                          <span className="mt-1 block h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+                            <span className="block h-full rounded-full" style={{ width: `${width}%`, background: over || noPlan ? "#c2453d" : color }} />
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-right">
+                          <span className="block text-sm font-bold tabular-nums text-ink">CHF {formatChf(k.ist)}</span>
+                          <span className="block text-xs tabular-nums text-stone-400">/ {k.plan > 0 ? formatChf(k.plan) : "–"}</span>
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="divide-y divide-stone-100 border-t border-stone-100">
+                          {k.budget.map((b) => (
+                            <button
+                              key={`b${b.id}`}
+                              onClick={() => setBudModal(b)}
+                              disabled={b.actId != null}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm disabled:opacity-100"
+                            >
+                              <span className="chip bg-accent/10 text-accent-dark">Plan</span>
+                              <span className="min-w-0 flex-1 truncate text-stone-700">
+                                {b.titel || k.kategorie}
+                                {b.actId != null && <span className="ml-1 text-xs text-stone-400">(via Act)</span>}
+                              </span>
+                              <span className="shrink-0 font-semibold tabular-nums text-stone-500">CHF {formatChf(b.betragCents)}</span>
+                            </button>
+                          ))}
+                          {k.expenses.map((e) => (
+                            <button key={`e${e.id}`} onClick={() => setExpModal(e)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+                              <span className="chip bg-stone-100 text-stone-500">Ist</span>
+                              <span className="min-w-0 flex-1 truncate text-stone-700">
+                                {e.beschreibung || k.kategorie}
+                                {e.userName && <span className="ml-1 text-xs text-stone-400">· {e.userId === user?.id ? "du" : e.userName}</span>}
+                              </span>
+                              {e.belegId && <Icon name="file" size={13} className="shrink-0 text-stone-400" />}
+                              <span className="shrink-0 font-semibold tabular-nums text-ink">CHF {formatChf(e.betragCents)}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
-
-          {/* Umschalter Ausgaben / Budget */}
-          <div className="flex rounded-xl bg-stone-100 p-1 text-sm font-semibold">
-            <button
-              className={`flex-1 rounded-lg py-1.5 ${view === "ausgaben" ? "bg-white text-ink shadow-sm" : "text-stone-500"}`}
-              onClick={() => setView("ausgaben")}
-            >
-              Ausgaben
-            </button>
-            <button
-              className={`flex-1 rounded-lg py-1.5 ${view === "budget" ? "bg-white text-ink shadow-sm" : "text-stone-500"}`}
-              onClick={() => setView("budget")}
-            >
-              Budget
-            </button>
+            )}
           </div>
 
-          {view === "ausgaben" ? (
-            <>
-              <button className="btn-primary w-full" onClick={() => setExpModal("new")}>
-                <Icon name="plus" size={17} /> Ausgabe erfassen
-              </button>
-
-              {/* Aufteilung nach Person */}
-              {byUser.length > 1 && (
-                <div className="card p-4">
-                  <h3 className="mb-2 text-sm font-bold text-stone-500">Nach Person</h3>
-                  <div className="space-y-2">
-                    {byUser.map((u) => (
-                      <div key={u.name} className="flex items-center gap-2 text-sm">
-                        <Avatar name={u.name} color={u.color} size={22} />
-                        <span className="flex-1 text-stone-700">{u.name}</span>
-                        <span className="font-semibold">CHF {formatChf(u.cents)}</span>
-                      </div>
-                    ))}
+          {/* Nach Person (für die Rückerstattung) */}
+          {byUser.length > 1 && (
+            <div className="card p-4">
+              <h3 className="mb-2 text-sm font-bold text-stone-500">Ausgelegt nach Person</h3>
+              <div className="space-y-2">
+                {byUser.map((u) => (
+                  <div key={u.name} className="flex items-center gap-2 text-sm">
+                    <Avatar name={u.name} color={u.color} size={22} />
+                    <span className="flex-1 text-stone-700">{u.name}</span>
+                    <span className="font-semibold">CHF {formatChf(u.cents)}</span>
                   </div>
-                </div>
-              )}
-
-              {filter && (
-                <button className="text-xs font-medium text-accent-dark" onClick={() => setFilter("")}>
-                  Filter &bdquo;{filter}&ldquo; aufheben
-                </button>
-              )}
-              {shown.length === 0 ? (
-                <EmptyState title="Noch keine Ausgaben" hint="Erfasse deine erste Ausgabe – Beleg fotografieren, Rest wird (mit KI) vorausgefüllt." />
-              ) : (
-                <div className="card divide-y divide-stone-100 overflow-hidden">
-                  {shown.map((e) => {
-                    const mine = e.userId === user?.id;
-                    return (
-                      <button key={e.id} onClick={() => setExpModal(e)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left active:bg-stone-50">
-                        <span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: CATEGORY_COLOR[e.kategorie] ?? "#8a8172" }} />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-ink">{e.beschreibung || e.kategorie}</p>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
-                            <span className="chip bg-stone-100 text-stone-600">{e.kategorie}</span>
-                            {e.datum && <span>{formatDate(e.datum)}</span>}
-                            {e.userName && <span>· {mine ? "du" : e.userName}</span>}
-                            {e.belegId && <Icon name="ticket" size={13} className="text-stone-400" />}
-                          </div>
-                        </div>
-                        <span className="shrink-0 font-bold text-ink">CHF {formatChf(e.betragCents)}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <button className="btn-primary w-full" onClick={() => setBudModal("new")}>
-                <Icon name="plus" size={17} /> Budgetposten hinzufügen
-              </button>
-              <p className="px-1 text-xs text-stone-500">
-                Trage geschätzte Auslagen ein (z. B. erwartete Gagen, Materialkosten). So sieht jedes Ressort früh, was auf uns zukommt.
-              </p>
-              {(budget ?? []).length === 0 ? (
-                <EmptyState title="Noch kein Budget geplant" hint="Erfasse geschätzte Kosten deines Bereichs – als Grundlage für die Gesamtplanung." />
-              ) : (
-                <div className="card divide-y divide-stone-100 overflow-hidden">
-                  {(budget ?? []).map((b) => (
-                    <button key={b.id} onClick={() => setBudModal(b)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left active:bg-stone-50">
-                      <span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: CATEGORY_COLOR[b.kategorie] ?? "#8a8172" }} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-ink">{b.titel || b.kategorie}</p>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
-                          <span className="chip bg-stone-100 text-stone-600">{b.kategorie}</span>
-                          {b.createdByName && <span>· {b.createdByName}</span>}
-                        </div>
-                      </div>
-                      <span className="shrink-0 font-bold text-stone-500">CHF {formatChf(b.betragCents)}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
+                ))}
+              </div>
+            </div>
           )}
         </>
       )}
@@ -282,7 +249,7 @@ function BudgetModal({
 }) {
   const editing = !!item;
   const [betrag, setBetrag] = useState(item ? (item.betragCents / 100).toFixed(2) : "");
-  const [kategorie, setKategorie] = useState(item?.kategorie ?? "Sonstiges");
+  const [kategorie, setKategorie] = useState(item?.kategorie ?? EXPENSE_CATEGORIES[0]);
   const [titel, setTitel] = useState(item?.titel ?? "");
   const [beschreibung, setBeschreibung] = useState(item?.beschreibung ?? "");
   const [saving, setSaving] = useState(false);
@@ -314,7 +281,7 @@ function BudgetModal({
     <Modal
       open
       onClose={onClose}
-      title={editing ? "Budgetposten bearbeiten" : "Budgetposten"}
+      title={editing ? "Budgetposten bearbeiten" : "Budgetposten (Schätzung)"}
       footer={
         <div className="flex gap-2">
           {editing && (
@@ -334,7 +301,7 @@ function BudgetModal({
       <div className="space-y-4">
         <div>
           <label className="label">Bezeichnung</label>
-          <input className="input" value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Gage Live-Band" autoFocus />
+          <input className="input" value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Zelt-Miete" autoFocus />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -342,7 +309,7 @@ function BudgetModal({
             <input className="input" inputMode="decimal" value={betrag} onChange={(e) => setBetrag(e.target.value)} placeholder="0.00" />
           </div>
           <div>
-            <label className="label">Bereich</label>
+            <label className="label">Kostenstelle</label>
             <select className="input" value={kategorie} onChange={(e) => setKategorie(e.target.value)}>
               {EXPENSE_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
@@ -354,8 +321,9 @@ function BudgetModal({
         </div>
         <div>
           <label className="label">Notiz (optional)</label>
-          <input className="input" value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="z. B. inkl. Reisespesen, Schätzung" />
+          <input className="input" value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="z. B. inkl. Auf-/Abbau, Schätzung" />
         </div>
+        <p className="text-xs text-stone-400">Tipp: Gagen der Acts erscheinen automatisch – die trägst du direkt beim Act ein.</p>
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </div>
     </Modal>
@@ -377,21 +345,19 @@ function ExpenseModal({
 }) {
   const editing = !!expense;
   const [betrag, setBetrag] = useState(expense ? (expense.betragCents / 100).toFixed(2) : "");
-  const [kategorie, setKategorie] = useState(expense?.kategorie ?? "Sonstiges");
+  const [kategorie, setKategorie] = useState(expense?.kategorie ?? EXPENSE_CATEGORIES[0]);
   const [beschreibung, setBeschreibung] = useState(expense?.beschreibung ?? "");
   const [datum, setDatum] = useState(expense?.datum ?? "");
   const [beleg, setBeleg] = useState<Attachment | null>(
     expense?.belegId ? { id: expense.belegId, filename: expense.belegFilename ?? "Beleg", mime: expense.belegMime ?? "", size: 0 } : null,
   );
   const [uploading, setUploading] = useState(false);
-  const [scanNote, setScanNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onFile = async (f: File) => {
     setUploading(true);
-    setScanNote("");
     setError("");
     try {
       const fd = new FormData();
@@ -400,34 +366,18 @@ function ExpenseModal({
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Upload fehlgeschlagen");
       const { attachment } = (await res.json()) as { attachment: Attachment };
       setBeleg(attachment);
-      // KI-Auslesen versuchen
-      setScanNote("Beleg wird gelesen …");
-      const scan = await api
-        .post<{ available: boolean; betragCents?: number; datum?: string; kategorie?: string; haendler?: string; error?: string }>(
-          "/expenses/scan",
-          { attachmentId: attachment.id },
-        )
-        .catch(() => null);
-      if (!scan || scan.available === false) {
-        setScanNote("");
-      } else if (scan.error) {
-        setScanNote("KI konnte den Beleg nicht sicher lesen – bitte manuell prüfen.");
-      } else {
-        if (scan.betragCents) setBetrag((scan.betragCents / 100).toFixed(2));
-        if (scan.datum) setDatum(scan.datum);
-        if (scan.kategorie) setKategorie(scan.kategorie);
-        setScanNote(`Erkannt${scan.haendler ? " (" + scan.haendler + ")" : ""} – bitte prüfen.`);
-      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
   const save = async () => {
     const cents = parseChf(betrag);
     if (!Number.isFinite(cents) || cents <= 0) return setError("Bitte einen gültigen Betrag angeben");
+    if (!beschreibung.trim()) return setError("Bitte eine Beschreibung angeben");
     setSaving(true);
     setError("");
     const payload = { ressortId, betragCents: cents, kategorie, beschreibung: beschreibung.trim(), datum: datum || null, belegId: beleg?.id ?? null };
@@ -469,34 +419,6 @@ function ExpenseModal({
       }
     >
       <div className="space-y-4">
-        {/* Beleg */}
-        <div>
-          <label className="label">Beleg (Foto/PDF, optional)</label>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,application/pdf"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
-          />
-          {beleg ? (
-            <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm">
-              <Icon name="ticket" size={16} className="text-accent" />
-              <a href={`/api/attachments/${beleg.id}`} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate font-medium text-accent-dark">
-                {beleg.filename}
-              </a>
-              <button className="text-stone-400 hover:text-red-500" onClick={() => setBeleg(null)} aria-label="Beleg entfernen">
-                <Icon name="close" size={15} />
-              </button>
-            </div>
-          ) : (
-            <button className="btn-ghost w-full" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              <Icon name="download" size={16} className="rotate-180" /> {uploading ? "Lädt …" : "Beleg hochladen"}
-            </button>
-          )}
-          {scanNote && <p className="mt-1 text-xs text-accent-dark">{scanNote}</p>}
-        </div>
-
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Betrag (CHF)</label>
@@ -508,7 +430,7 @@ function ExpenseModal({
           </div>
         </div>
         <div>
-          <label className="label">Kategorie</label>
+          <label className="label">Kostenstelle</label>
           <select className="input" value={kategorie} onChange={(e) => setKategorie(e.target.value)}>
             {EXPENSE_CATEGORIES.map((c) => (
               <option key={c} value={c}>
@@ -518,9 +440,31 @@ function ExpenseModal({
           </select>
         </div>
         <div>
-          <label className="label">Beschreibung (optional)</label>
-          <input className="input" value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="z. B. Farbe & Pinsel" />
+          <label className="label">Beschreibung</label>
+          <input className="input" value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="Wofür? z. B. Farbe & Pinsel" />
         </div>
+
+        {/* Beleg (optional) */}
+        <div>
+          <label className="label">Beleg (Foto/PDF, optional)</label>
+          <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+          {beleg ? (
+            <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm">
+              <Icon name="file" size={16} className="text-accent" />
+              <a href={`/api/attachments/${beleg.id}`} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate font-medium text-accent-dark">
+                {beleg.filename}
+              </a>
+              <button className="text-stone-400 hover:text-red-500" onClick={() => setBeleg(null)} aria-label="Beleg entfernen">
+                <Icon name="close" size={15} />
+              </button>
+            </div>
+          ) : (
+            <button className="btn-ghost w-full py-2 text-sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <Icon name="download" size={16} className="rotate-180" /> {uploading ? "Lädt …" : "Beleg hochladen"}
+            </button>
+          )}
+        </div>
+
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </div>
     </Modal>

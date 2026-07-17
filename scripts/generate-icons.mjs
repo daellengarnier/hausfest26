@@ -74,10 +74,10 @@ function makeIcon(size, { maskable = false } = {}) {
       px[i + 3] = a;
     }
   }
-  // Stehendes Dreieck (Spitze oben) in Creme.
-  const yTop = size * 0.24;
-  const yBot = size * 0.75;
-  const halfBase = size * 0.3;
+  // Stehendes Dreieck (Spitze oben) in Creme – grosszügig.
+  const yTop = size * 0.15;
+  const yBot = size * 0.83;
+  const halfBase = size * 0.38;
   const cx = size / 2;
   for (let y = Math.round(yTop); y <= Math.round(yBot); y++) {
     const f = (y - yTop) / (yBot - yTop); // 0 an der Spitze, 1 an der Basis

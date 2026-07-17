@@ -10,6 +10,7 @@ import { TodoFormModal } from "@/components/TodoFormModal";
 import { CommentThread } from "@/components/CommentThread";
 import { Zeitplan } from "@/components/Zeitplan";
 import { Finanzen } from "@/components/Finanzen";
+import { Acts } from "@/components/Acts";
 import { relTime } from "@/lib/uiUtil";
 import type { ProtocolRef, Ressort, SubRessort, Todo } from "@/lib/uiTypes";
 import { Icon } from "@/components/Icon";
@@ -25,7 +26,7 @@ export default function RessortPage() {
   const params = useParams<{ id: string }>();
   const ressortId = Number(params.id);
   const [data, setData] = useState<DetailResponse | null>(null);
-  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | "bars" | "finanzen" | null>(null);
+  const [tab, setTab] = useState<"todos" | "pinnwand" | "zeitplan" | "bars" | "finanzen" | "acts" | null>(null);
   const [error, setError] = useState("");
   const [todoModal, setTodoModal] = useState<{ open: boolean; subId: number | null }>({ open: false, subId: null });
   const [createSeq, setCreateSeq] = useState(0); // erzwingt frisches Todo-Formular bei jedem Öffnen
@@ -56,21 +57,27 @@ export default function RessortPage() {
   const todosBySub = (subId: number) => todos.filter((t) => t.subRessortId === subId);
   const openTodoCount = todos.filter((t) => t.status !== "erledigt").length;
   // Spezialansichten öffnen standardmäßig ihren eigenen Tab.
-  const activeTab = tab ?? (ressort.hatFinanzen ? "finanzen" : ressort.hatZeitplan ? "zeitplan" : "todos");
+  // Spezial-Ressorts (Line-up/Acts) brauchen keine Todos/Pinnwand.
+  const spezial = !!ressort.hatZeitplan || !!ressort.hatActs;
+  const activeTab = tab ?? (ressort.hatActs ? "acts" : ressort.hatFinanzen ? "finanzen" : ressort.hatZeitplan ? "zeitplan" : "todos");
 
   return (
     <div className="space-y-4">
-      <div className="card overflow-hidden p-4" style={{ borderTop: `5px solid ${ressort.farbe}` }}>
-        <Link href="/" className="text-sm text-slate-400">
+      {/* Kopf ohne Box – Titel prominent mit farbigem Punkt. */}
+      <div className="px-1 pt-1">
+        <Link href="/" className="text-sm text-stone-400">
           ← Übersicht
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">{ressort.name}</h1>
-        {ressort.beschreibung && <p className="mt-1 text-sm text-slate-500">{ressort.beschreibung}</p>}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-400">Lead{ressort.leads.length !== 1 ? "s" : ""}:</span>
-          {ressort.leads.length === 0 && <span className="text-xs text-slate-400">—</span>}
+        <h1 className="mt-1 flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-ink">
+          <span className="h-4 w-4 shrink-0 rounded-full" style={{ background: ressort.farbe }} />
+          {ressort.name}
+        </h1>
+        {ressort.beschreibung && <p className="mt-1 text-sm text-stone-500">{ressort.beschreibung}</p>}
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-stone-400">Lead{ressort.leads.length !== 1 ? "s" : ""}:</span>
+          {ressort.leads.length === 0 && <span className="text-xs text-stone-400">—</span>}
           {ressort.leads.map((u) => (
-            <span key={u.id} className="flex items-center gap-1.5 rounded-full bg-slate-100 py-0.5 pl-0.5 pr-2.5 text-sm">
+            <span key={u.id} className="flex items-center gap-1.5 rounded-full bg-stone-100 py-0.5 pl-0.5 pr-2.5 text-sm">
               <Avatar name={u.name} color={u.avatarColor} size={22} />
               {u.name}
             </span>
@@ -79,6 +86,11 @@ export default function RessortPage() {
       </div>
 
       <div className="flex gap-1 overflow-x-auto rounded-xl bg-slate-200/70 p-1 text-sm font-medium">
+        {ressort.hatActs && (
+          <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "acts" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("acts")}>
+            Acts
+          </button>
+        )}
         {ressort.hatFinanzen && (
           <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "finanzen" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("finanzen")}>
             Ausgaben
@@ -90,19 +102,25 @@ export default function RessortPage() {
               Line-up
             </button>
             <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "bars" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("bars")}>
-              Bars
+              Öffnungszeiten Bars
             </button>
           </>
         )}
-        <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "todos" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("todos")}>
-          Todos {openTodoCount > 0 && <span className="text-slate-400">({openTodoCount})</span>}
-        </button>
-        <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "pinnwand" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("pinnwand")}>
-          Pinnwand
-        </button>
+        {!spezial && (
+          <>
+            <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "todos" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("todos")}>
+              Todos {openTodoCount > 0 && <span className="text-slate-400">({openTodoCount})</span>}
+            </button>
+            <button className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${activeTab === "pinnwand" ? "bg-white shadow-sm" : "text-slate-500"}`} onClick={() => setTab("pinnwand")}>
+              Pinnwand
+            </button>
+          </>
+        )}
       </div>
 
-      {activeTab === "finanzen" ? (
+      {activeTab === "acts" ? (
+        <Acts ressortId={ressortId} />
+      ) : activeTab === "finanzen" ? (
         <Finanzen ressortId={ressortId} />
       ) : activeTab === "zeitplan" ? (
         <Zeitplan ressortId={ressortId} board="programm" mode="acts" />
@@ -143,10 +161,7 @@ export default function RessortPage() {
                     onClick={() => setCollapsed((c) => ({ ...c, [sub.id]: !c[sub.id] }))}
                   >
                     <Icon name="chevron" size={16} className={`shrink-0 text-stone-400 transition-transform ${isCollapsed ? "" : "rotate-90"}`} />
-                    <span className="min-w-0">
-                      <span className="block truncate font-semibold">{sub.name}</span>
-                      {sub.beschreibung && <span className="block truncate text-xs text-stone-500">{sub.beschreibung}</span>}
-                    </span>
+                    <span className="block min-w-0 truncate font-semibold">{sub.name}</span>
                   </button>
                   <span className="chip shrink-0 bg-stone-100 text-stone-500">{open} offen</span>
                   <button onClick={() => setEditSub(sub)} className="shrink-0 rounded-lg p-1.5 text-stone-300 hover:bg-stone-100 hover:text-accent" aria-label="Bearbeiten">

@@ -53,6 +53,8 @@ export const ressorts = pgTable("ressorts", {
   hatZeitplan: boolean("hatZeitplan").notNull().default(false),
   // Ressort Finanzen bekommt eine Ausgaben-/Belegverwaltung.
   hatFinanzen: boolean("hatFinanzen").notNull().default(false),
+  // Ressort Acts verwaltet Bands/DJs (Rider, Kosten, Übernachtung, Promo).
+  hatActs: boolean("hatActs").notNull().default(false),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -95,6 +97,39 @@ export const budgetItems = pgTable("budget_items", {
   betragCents: integer("betragCents").notNull(),
   beschreibung: text("beschreibung").notNull().default(""),
   createdBy: integer("createdBy").references(() => users.id, { onDelete: "set null" }),
+  // Automatisch aus einem Act gepflegter Posten (Gage) – hält Finanzen & Acts synchron.
+  actId: integer("actId").references(() => acts.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Acts (Bands/DJs). Zentrale „Ordner" mit allen Infos & Dateien pro Act.
+// Optional mit einem Line-up-Eintrag verknüpft (schedule_entries.actId).
+export const acts = pgTable("acts", {
+  id: serial("id").primaryKey(),
+  ressortId: integer("ressortId")
+    .notNull()
+    .references(() => ressorts.id, { onDelete: "cascade" }),
+  name: text("name").notNull().default(""),
+  typ: text("typ").notNull().default("band"), // 'band' | 'dj' | 'andere'
+  kostenCents: integer("kostenCents"), // Gage – fließt in Finanzen (Posten „Gagen")
+  uebernachtung: boolean("uebernachtung").notNull().default(false),
+  anzahlPersonen: integer("anzahlPersonen"),
+  promotext: text("promotext").notNull().default(""),
+  notiz: text("notiz").notNull().default(""),
+  createdBy: integer("createdBy").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Dateien eines Acts, gruppiert nach Rubrik (Techrider, Hospitality, Weitere).
+export const actFiles = pgTable("act_files", {
+  id: serial("id").primaryKey(),
+  actId: integer("actId")
+    .notNull()
+    .references(() => acts.id, { onDelete: "cascade" }),
+  attachmentId: integer("attachmentId")
+    .notNull()
+    .references(() => attachments.id, { onDelete: "cascade" }),
+  rubrik: text("rubrik").notNull().default("sonstiges"), // 'techrider' | 'hospitality' | 'sonstiges'
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -265,6 +300,8 @@ export const scheduleEntries = pgTable("schedule_entries", {
   notiz: text("notiz").notNull().default(""),
   anzahlLeute: integer("anzahlLeute"),
   gageCents: integer("gageCents"),
+  // Verknüpfung zum Act-„Ordner" (Rider, Kosten …) im Acts-Ressort.
+  actId: integer("actId").references(() => acts.id, { onDelete: "set null" }),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 

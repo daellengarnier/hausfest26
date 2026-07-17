@@ -23,6 +23,7 @@ export async function GET(request: Request) {
       createdBy: budgetItems.createdBy,
       createdByName: users.name,
       createdByColor: users.avatarColor,
+      actId: budgetItems.actId,
     })
     .from(budgetItems)
     .leftJoin(users, eq(users.id, budgetItems.createdBy))

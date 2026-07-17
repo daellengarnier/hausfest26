@@ -39,22 +39,25 @@ export default function WelcomePage() {
 
   return (
     <div className="space-y-4">
-      {/* Begrüssung + Titel */}
-      <div className="card p-5">
-        <p className="text-sm font-semibold text-accent-dark">{hi},</p>
-        <p className="-mt-0.5 text-lg font-bold text-ink">{user?.name}</p>
-        <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ink">
+      {/* Begrüssung – ausserhalb der Box, etwas grösser */}
+      <h1 className="px-1 pt-1 text-2xl font-extrabold tracking-tight text-ink">
+        {hi}, <span className="brand-text">{user?.name}</span>
+      </h1>
+
+      {/* Titel + Links – kompakte Box */}
+      <div className="card p-4">
+        <p className="text-lg font-extrabold tracking-tight text-ink">
           Hausfest <span className="brand-text">2026</span>
-        </h1>
+        </p>
         <p className="mt-0.5 text-sm text-stone-500">33 Jahre Via · 10 Jahre Spinnerei</p>
 
-        {/* Buttons */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary">
-            <Icon name="ticket" size={17} /> Tickets
+        {/* Buttons – kleiner */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary py-2 text-sm">
+            <Icon name="ticket" size={15} /> Tickets
           </a>
-          <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost">
-            <Icon name="calendar" size={17} /> Schichtplan
+          <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost py-2 text-sm">
+            <Icon name="calendar" size={15} /> Schichtplan
           </a>
         </div>
         <p className="mt-2 text-center text-xs text-stone-500">
@@ -96,6 +99,7 @@ export default function WelcomePage() {
                   <div className="flex items-center gap-2">
                     <p className="truncate font-semibold text-ink">{r.name}</p>
                     {r.hatZeitplan && <span className="chip bg-accent/10 text-accent-dark">Line-up</span>}
+                    {r.hatActs && <span className="chip bg-accent/10 text-accent-dark">Acts</span>}
                   </div>
                 </div>
                 {r.openTodos > 0 && (

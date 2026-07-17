@@ -2,6 +2,7 @@ import type { IconName } from "@/components/Icon";
 
 // Ordnet Ressorts ein passendes SVG-Icon zu (kein Emoji).
 const MAP: { match: RegExp; icon: IconName }[] = [
+  { match: /^acts$|bands?/i, icon: "star" },
   { match: /programm|line.?up|musik|dj/i, icon: "music" },
   { match: /essen|food|grill|küche/i, icon: "food" },
   { match: /getränk|bar|drink/i, icon: "drink" },

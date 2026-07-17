@@ -34,7 +34,10 @@ export type IconName =
   | "coins"
   | "tent"
   | "clock"
-  | "send";
+  | "send"
+  | "bed"
+  | "file"
+  | "star";
 
 const P: Record<IconName, string> = {
   home: "M4 11.5 12 5l8 6.5M6 10v9h12v-9M10 19v-5h4v5",
@@ -69,6 +72,9 @@ const P: Record<IconName, string> = {
   tent: "M12 4 3 19h18zM12 4v15M12 11l-4 8M12 11l4 8",
   clock: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16M12 8v4.5l3 2",
   send: "M4 12l16-7-7 16-2.5-6.5z",
+  bed: "M3 8v11M3 12h14a4 4 0 0 1 4 4v3M21 15H3M6 8h4a2 2 0 0 1 2 2v2",
+  file: "M13 4H7a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9zM13 4v5h5M9 13h6M9 16h6",
+  star: "M12 4l2.3 4.8 5.2.7-3.8 3.6.9 5.1-4.6-2.5-4.6 2.5.9-5.1L4.5 9.5l5.2-.7z",
 };
 
 const STROKE_2: IconName[] = ["home", "tasks", "bell"];
