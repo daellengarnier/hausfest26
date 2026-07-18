@@ -64,28 +64,15 @@ export default function WelcomePage() {
         </h1>
 
         <div className="mt-3 space-y-2">
-          <div className="flex gap-2">
-            <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 py-2 text-sm">
-              <Icon name="ticket" size={15} /> Tickets öffnen
-            </a>
-            <button className="btn-ghost px-3 py-2 text-sm" onClick={() => copyLink(TICKET_URL, "ticket")} aria-label="Ticket-Link kopieren">
-              <Icon name={copiedLink === "ticket" ? "check" : "copy"} size={16} /> {copiedLink === "ticket" ? "Kopiert" : "Link"}
-            </button>
-          </div>
+          <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary w-full py-2 text-sm">
+            <Icon name="ticket" size={15} /> Tickets öffnen
+          </a>
           <div className="flex gap-2">
             <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost flex-1 py-2 text-sm">
               <Icon name="calendar" size={15} /> Schichtplan öffnen
             </a>
             <button className="btn-ghost px-3 py-2 text-sm" onClick={() => copyLink(SCHICHT_URL, "schicht")} aria-label="Schichtplan-Link kopieren">
               <Icon name={copiedLink === "schicht" ? "check" : "copy"} size={16} /> {copiedLink === "schicht" ? "Kopiert" : "Link"}
-            </button>
-          </div>
-          <div className="flex gap-2">
-            <button className="btn-ghost flex-1 py-2 text-sm" onClick={() => invite && copyLink(invite, "einladung")}>
-              <Icon name={copiedLink === "einladung" ? "check" : "send"} size={15} /> {copiedLink === "einladung" ? "Einladung kopiert" : "Einladung kopieren"}
-            </button>
-            <button className="btn-ghost px-3 py-2 text-sm" onClick={() => setInviteOpen(true)} aria-label="Einladung bearbeiten">
-              <Icon name="pencil" size={16} />
             </button>
           </div>
         </div>
@@ -104,6 +91,15 @@ export default function WelcomePage() {
           </button>
           {copied ? <span className="ml-1 text-accent">kopiert</span> : <span className="text-stone-400"> (tippen zum Kopieren)</span>}
         </p>
+
+        <div className="mt-3 flex gap-2">
+          <button className="btn-ghost flex-1 py-2 text-sm" onClick={() => invite && copyLink(invite, "einladung")}>
+            <Icon name={copiedLink === "einladung" ? "check" : "send"} size={15} /> {copiedLink === "einladung" ? "Einladung kopiert" : "Einladung kopieren"}
+          </button>
+          <button className="btn-ghost px-3 py-2 text-sm" onClick={() => setInviteOpen(true)} aria-label="Einladung bearbeiten">
+            <Icon name="pencil" size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Programm-Einstieg – kein Ressort, eigener Look */}
