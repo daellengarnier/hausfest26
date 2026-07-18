@@ -12,10 +12,12 @@ export function TodoRow({
   todo,
   onChanged,
   onDeleted,
+  detail = false,
 }: {
   todo: Todo;
   onChanged?: (t: Todo) => void;
   onDeleted?: () => void;
+  detail?: boolean;
 }) {
   const [status, setStatus] = useState<TodoStatus>(todo.status);
   const [busy, setBusy] = useState(false);
@@ -57,11 +59,11 @@ export function TodoRow({
 
   return (
     <>
-      <Link href={`/todo/${todo.id}`} className="flex items-center gap-3 px-3 py-2.5 active:bg-slate-50">
+      <Link href={`/todo/${todo.id}`} className={`flex gap-3 px-3 py-2.5 active:bg-slate-50 ${detail ? "items-start" : "items-center"}`}>
         <button
           onClick={toggleDone}
           aria-label="Erledigt umschalten"
-          className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${
+          className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${detail ? "mt-0.5" : ""} ${
             done ? "border-accent bg-accent text-white" : "border-stone-300 text-transparent"
           }`}
         >
@@ -69,9 +71,12 @@ export function TodoRow({
         </button>
 
         <div className="min-w-0 flex-1">
-          <p className={`truncate text-sm font-medium ${done ? "text-slate-400 line-through" : "text-slate-800"}`}>
+          <p className={`text-sm font-medium ${detail ? "" : "truncate"} ${done ? "text-slate-400 line-through" : "text-slate-800"}`}>
             {todo.titel}
           </p>
+          {detail && todo.beschreibung && (
+            <p className={`mt-0.5 whitespace-pre-wrap text-xs ${done ? "text-slate-400" : "text-stone-500"}`}>{todo.beschreibung}</p>
+          )}
           {(todo.fristDatum || !!todo.commentCount) && (
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
               {todo.fristDatum && (

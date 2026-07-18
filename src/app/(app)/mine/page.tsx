@@ -110,7 +110,7 @@ function TodoRowWithRessort({ todo, showRessort = true, onChanged }: { todo: Tod
           {todo.ressortName}
         </div>
       )}
-      <TodoRow todo={{ ...todo, assignees: todo.assignees ?? [] }} onChanged={onChanged} onDeleted={onChanged} />
+      <TodoRow todo={{ ...todo, assignees: todo.assignees ?? [] }} detail onChanged={onChanged} onDeleted={onChanged} />
     </div>
   );
 }
