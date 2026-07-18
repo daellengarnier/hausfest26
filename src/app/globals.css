@@ -22,7 +22,7 @@
   --gradient-brand: linear-gradient(135deg, #6aa86f 0%, #4b7f52 55%, #35603c 100%);
   --gradient-hero: linear-gradient(140deg, #5a9a63, #3f7346 55%, #2f5638);
   --shadow-soft: 0 2px 5px rgba(60, 46, 24, 0.06), 0 22px 38px -24px rgba(60, 46, 24, 0.42), 0 0 0 1px rgba(120, 90, 50, 0.08);
-  --shadow-pop: 0 12px 24px -13px rgba(75, 127, 82, 0.65);
+  --shadow-pop: 0 6px 16px -12px rgba(75, 127, 82, 0.45);
   --shadow-mark: 0 10px 22px -10px rgba(75, 127, 82, 0.75);
 }
 
@@ -95,7 +95,7 @@ body {
   .btn-primary,
   .btn-ghost,
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 font-bold transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 font-semibold transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-primary {
     @apply text-white;
