@@ -27,7 +27,6 @@ export default function WelcomePage() {
   const { user } = useAuth();
   const [ressorts, setRessorts] = useState<RessortSummary[] | null>(null);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState("");
   const [hi, setHi] = useState("Hallo");
   const [invite, setInvite] = useState("");
@@ -65,41 +64,23 @@ export default function WelcomePage() {
 
         <div className="mt-3 space-y-2">
           <div className="flex gap-2">
-            <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost flex-1 py-2 text-sm">
-              <Icon name="calendar" size={15} /> Schichtplan öffnen
+            <a href={SCHICHT_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost flex-1 py-1.5 text-sm">
+              <Icon name="calendar" size={15} /> Schichtplan
             </a>
-            <button className="btn-ghost px-3 py-2 text-sm" onClick={() => copyLink(SCHICHT_URL, "schicht")} aria-label="Schichtplan-Link kopieren">
-              <Icon name={copiedLink === "schicht" ? "check" : "copy"} size={16} /> {copiedLink === "schicht" ? "Kopiert" : "Link"}
+            <button className="btn-ghost flex-1 py-1.5 text-sm" onClick={() => invite && copyLink(invite, "einladung")}>
+              <Icon name={copiedLink === "einladung" ? "check" : "send"} size={15} /> {copiedLink === "einladung" ? "Kopiert" : "Einladung"}
             </button>
-          </div>
-          <div className="flex gap-2">
-            <button className="btn-ghost flex-1 py-2 text-sm" onClick={() => invite && copyLink(invite, "einladung")}>
-              <Icon name={copiedLink === "einladung" ? "check" : "send"} size={15} /> {copiedLink === "einladung" ? "Einladung kopiert" : "Einladung kopieren"}
-            </button>
-            <button className="btn-ghost px-3 py-2 text-sm" onClick={() => setInviteOpen(true)} aria-label="Einladung bearbeiten">
+            <button className="btn-ghost px-3 py-1.5" onClick={() => setInviteOpen(true)} aria-label="Einladung bearbeiten">
               <Icon name="pencil" size={16} />
             </button>
           </div>
+          <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary flex w-full flex-col gap-0 py-1.5 leading-tight">
+            <span className="flex items-center gap-2 text-sm">
+              <Icon name="ticket" size={15} /> Tickets öffnen
+            </span>
+            <span className="text-[11px] font-normal text-white/85">Passwort: {TICKET_PASSWORD}</span>
+          </a>
         </div>
-        <p className="mt-2 text-xs text-stone-500">
-          Ticket-Passwort:{" "}
-          <button
-            onClick={() =>
-              navigator.clipboard?.writeText(TICKET_PASSWORD).then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1400);
-              })
-            }
-            className="font-mono font-bold text-accent-dark underline decoration-dotted underline-offset-2"
-          >
-            {TICKET_PASSWORD}
-          </button>
-          {copied ? <span className="ml-1 text-accent">kopiert</span> : <span className="text-stone-400"> (tippen zum Kopieren)</span>}
-        </p>
-
-        <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary mt-3 w-full py-2 text-sm">
-          <Icon name="ticket" size={15} /> Tickets öffnen
-        </a>
       </div>
 
       {/* Programm-Einstieg – kein Ressort, eigener Look */}
