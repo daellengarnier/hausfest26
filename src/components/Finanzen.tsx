@@ -135,10 +135,10 @@ export function Finanzen({ ressortId }: { ressortId: number }) {
                           <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
                           <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{k.kategorie}</span>
                         </button>
-                        <div className="shrink-0 text-right">
-                          <span className="block text-sm font-bold tabular-nums text-ink">CHF {formatChf(k.ist)}</span>
+                        <div className="flex shrink-0 flex-col items-end">
+                          <span className="text-sm font-bold tabular-nums text-ink">CHF {formatChf(k.ist)}</span>
                           <button
-                            className={`block text-xs tabular-nums text-stone-400 ${isAdmin ? "underline decoration-dotted underline-offset-2" : "cursor-default"}`}
+                            className={`text-xs tabular-nums text-stone-400 ${isAdmin ? "underline decoration-dotted underline-offset-2" : "cursor-default"}`}
                             onClick={() => isAdmin && setBudModal({ kategorie: k.kategorie, betragCents: k.plan })}
                             disabled={!isAdmin}
                           >
