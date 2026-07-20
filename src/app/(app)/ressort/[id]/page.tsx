@@ -117,8 +117,13 @@ export default function RessortPage() {
         )}
         {!spezial && (
           <>
-            <button className={`seg-item whitespace-nowrap px-3 ${activeTab === "todos" ? "on" : ""}`} onClick={() => setTab("todos")}>
-              Todos {openTodoCount > 0 && <span className="opacity-60">({openTodoCount})</span>}
+            <button className={`seg-item inline-flex items-center justify-center gap-1.5 whitespace-nowrap px-3 ${activeTab === "todos" ? "on" : ""}`} onClick={() => setTab("todos")}>
+              Todos
+              {openTodoCount > 0 && (
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#c2453d] px-1 text-[11px] font-bold leading-none text-white">
+                  {openTodoCount}
+                </span>
+              )}
             </button>
             <button className={`seg-item whitespace-nowrap px-3 ${activeTab === "pinnwand" ? "on" : ""}`} onClick={() => setTab("pinnwand")}>
               Pinnwand

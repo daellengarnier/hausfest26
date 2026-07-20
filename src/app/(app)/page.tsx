@@ -139,8 +139,8 @@ export default function WelcomePage() {
                   {ressortHint(r) && <p className="truncate text-xs text-stone-400">{ressortHint(r)}</p>}
                 </div>
                 {r.openTodos > 0 && (
-                  <span className="chip shrink-0" style={{ background: `${r.farbe}1c`, color: r.farbe }}>
-                    {r.openTodos} offen
+                  <span className="grid h-6 min-w-6 shrink-0 place-items-center rounded-full bg-[#c2453d] px-1.5 text-xs font-bold leading-none text-white" title={`${r.openTodos} offene Todos`}>
+                    {r.openTodos}
                   </span>
                 )}
                 <Icon name="chevron" size={16} className="shrink-0 text-stone-300" />
