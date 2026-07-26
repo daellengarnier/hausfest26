@@ -3,7 +3,7 @@ export type Rolle = "admin" | "mitglied";
 export type TodoStatus = "offen" | "in_arbeit" | "erledigt";
 export type Verfuegbarkeit = "ja" | "vielleicht" | "nein";
 export type MeetingStatus = "umfrage_laeuft" | "terminFixiert" | "erledigt";
-export type ActivityTyp = "mention" | "zuweisung" | "neuer_kommentar" | "sitzung";
+export type ActivityTyp = "mention" | "zuweisung" | "neuer_kommentar" | "sitzung" | "erledigt";
 
 export interface User {
   id: number;

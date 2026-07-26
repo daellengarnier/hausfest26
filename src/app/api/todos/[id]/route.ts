@@ -3,7 +3,8 @@ import { requireUser, isResponse } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
 import { todos } from "@/lib/db/schema";
 import type { TodoStatus } from "@/lib/db/schema";
-import { setAssignees, todoWithDetail } from "@/lib/todoHelpers";
+import { assigneesFor, setAssignees, todoWithDetail } from "@/lib/todoHelpers";
+import { notifyMany } from "@/lib/notify";
 
 const STATUS: TodoStatus[] = ["offen", "in_arbeit", "erledigt"];
 
@@ -22,7 +23,11 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   const { id } = await ctx.params;
   const todoId = Number(id);
   const db = getDb();
-  const rows = await db.select({ id: todos.id, titel: todos.titel }).from(todos).where(eq(todos.id, todoId)).limit(1);
+  const rows = await db
+    .select({ id: todos.id, titel: todos.titel, status: todos.status, erstelltVon: todos.erstelltVon })
+    .from(todos)
+    .where(eq(todos.id, todoId))
+    .limit(1);
   const existing = rows[0];
   if (!existing) return Response.json({ error: "Todo nicht gefunden" }, { status: 404 });
 
@@ -42,6 +47,26 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
       body.assigneeIds.map(Number),
       auth.id,
       body?.titel !== undefined ? String(body.titel) : existing.titel,
+    );
+  }
+
+  // Wird ein Todo neu auf „erledigt" gesetzt → Inbox-Hinweis (ohne Push)
+  // an Ersteller:in und übrige Zuständige.
+  if (patch.status === "erledigt" && existing.status !== "erledigt") {
+    const titel = patch.titel ?? existing.titel;
+    const recipients = new Set<number>();
+    if (existing.erstelltVon) recipients.add(existing.erstelltVon);
+    for (const a of await assigneesFor(todoId)) recipients.add(a.id);
+    await notifyMany(
+      [...recipients].map((userId) => ({
+        userId,
+        actorUserId: auth.id,
+        typ: "erledigt" as const,
+        text: `${auth.name} hat das Todo „${titel}" erledigt`,
+        refTyp: "todo",
+        refId: todoId,
+      })),
+      { push: false },
     );
   }
   return Response.json({ todo: await todoWithDetail(todoId) });

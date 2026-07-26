@@ -13,6 +13,7 @@ const ICON: Record<string, IconName> = {
   zuweisung: "check",
   neuer_kommentar: "chat",
   sitzung: "calendar",
+  erledigt: "check",
 };
 
 function targetPath(it: ActivityItem): string {

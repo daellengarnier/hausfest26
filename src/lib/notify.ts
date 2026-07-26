@@ -11,6 +11,7 @@ const PUSH_TITLE: Record<ActivityTyp, string> = {
   zuweisung: "Neues Todo für dich",
   neuer_kommentar: "Neuer Kommentar",
   sitzung: "Sitzung",
+  erledigt: "Todo erledigt",
 };
 
 function refUrl(refTyp: string, refId: number): string {
@@ -61,10 +62,13 @@ export interface NotifyInput {
 }
 
 // Legt Benachrichtigungen an – nie für die handelnde Person selbst.
-export async function notifyMany(inputs: NotifyInput[]): Promise<void> {
+// opts.push=false → nur Inbox (Glocke), kein Web-Push.
+export async function notifyMany(inputs: NotifyInput[], opts: { push?: boolean } = {}): Promise<void> {
   const filtered = inputs.filter((i) => i.userId !== i.actorUserId);
   if (filtered.length === 0) return;
   await getDb().insert(activityItems).values(filtered);
+
+  if (opts.push === false) return;
 
   // Zusätzlich Web-Push senden (best effort, blockiert die Aktion nicht).
   void (async () => {
