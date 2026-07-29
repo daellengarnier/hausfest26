@@ -26,6 +26,18 @@
   --shadow-mark: 0 10px 22px -10px rgba(75, 127, 82, 0.75);
 }
 
+/* Wandernder Leucht-Rand um Karten: ein heller Bogen läuft der Kante entlang. */
+@property --card-glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes card-glow-spin {
+  to {
+    --card-glow-angle: 360deg;
+  }
+}
+
 html,
 body {
   height: 100%;
@@ -135,9 +147,38 @@ body {
     color: #a4864f;
   }
   .card {
-    @apply rounded-[22px] text-ink;
+    @apply relative rounded-[22px] text-ink;
     background: #fbf8f1;
     box-shadow: var(--shadow-soft);
+  }
+  /* Leuchtender Bogen, der um den Kartenrand wandert. */
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    padding: 1.6px;
+    background: conic-gradient(
+      from var(--card-glow-angle),
+      rgba(122, 168, 96, 0.95) 0deg,
+      rgba(214, 236, 196, 0.9) 12deg,
+      rgba(122, 168, 96, 0.2) 34deg,
+      transparent 62deg,
+      transparent 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: card-glow-spin 6s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card::after {
+      animation: none;
+    }
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold;
