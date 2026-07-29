@@ -13,6 +13,7 @@ import type { RessortSummary } from "@/lib/uiTypes";
 const TICKET_URL = "https://www.petzi.ch/en/organiser/236127/x2nv44btSyy-vzACtazc3A/";
 const TICKET_PASSWORD = "viaspinnerei";
 const SCHICHT_URL = "https://spinnplan-23.netlify.app?event=6f4b7584-2ca0-4687-8a8b-b0e4ba5f9387";
+const LANDING_URL = "https://hausfest-via.al-daellen.ch/";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -74,12 +75,20 @@ export default function WelcomePage() {
               <Icon name="pencil" size={16} />
             </button>
           </div>
-          <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary flex w-full flex-col gap-0 py-1.5 leading-tight">
-            <span className="flex items-center gap-2 text-sm">
-              <Icon name="ticket" size={15} /> Tickets öffnen
-            </span>
-            <span className="text-[11px] font-normal text-white/85">Passwort: {TICKET_PASSWORD}</span>
-          </a>
+          <div className="flex gap-2">
+            <a href={TICKET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary flex flex-1 flex-col gap-0 px-3 py-1.5 leading-tight">
+              <span className="flex items-center gap-1.5 text-sm">
+                <Icon name="ticket" size={15} /> Tickets
+              </span>
+              <span className="text-[10px] font-normal text-white/85">Passwort: {TICKET_PASSWORD}</span>
+            </a>
+            <a href={LANDING_URL} target="_blank" rel="noopener noreferrer" className="btn-primary flex flex-1 flex-col gap-0 px-3 py-1.5 leading-tight">
+              <span className="flex items-center gap-1.5 text-sm">
+                <Icon name="external" size={15} /> Landing Page
+              </span>
+              <span className="text-[10px] font-normal text-white/85">Hausfest</span>
+            </a>
+          </div>
         </div>
       </div>
 
