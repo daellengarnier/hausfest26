@@ -53,7 +53,8 @@ export default function AdminPage() {
 function UsersAdmin() {
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [menuUser, setMenuUser] = useState<AdminUser | null>(null);
+  const [pwResult, setPwResult] = useState<{ name: string; pw: string; created?: boolean } | null>(null);
 
   const load = () => api.get<{ users: AdminUser[] }>("/users/admin/all").then((d) => setUsers(d.users));
   useEffect(() => {
@@ -62,15 +63,18 @@ function UsersAdmin() {
 
   const toggleActive = async (u: AdminUser) => {
     await api.patch(`/users/admin/${u.id}`, { active: !u.active });
+    setMenuUser(null);
     load();
   };
   const setRole = async (u: AdminUser, rolle: Rolle) => {
     await api.patch(`/users/admin/${u.id}`, { rolle });
+    setMenuUser(null);
     load();
   };
   const resetPw = async (u: AdminUser) => {
     const { placeholderPassword } = await api.post<{ placeholderPassword: string }>(`/users/admin/${u.id}/reset-password`, {});
-    setNotice(`Neues Platzhalter-Passwort für ${u.name}: „${placeholderPassword}" (muss beim nächsten Login geändert werden).`);
+    setMenuUser(null);
+    setPwResult({ name: u.name, pw: placeholderPassword });
   };
 
   if (!users) return <Spinner />;
@@ -80,7 +84,6 @@ function UsersAdmin() {
       <button className="btn-primary w-full" onClick={() => setAddOpen(true)}>
         + Account anlegen
       </button>
-      {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p>}
 
       <div className="card divide-y divide-slate-100 overflow-hidden">
         {users.map((u) => (
@@ -92,33 +95,79 @@ function UsersAdmin() {
               </p>
               <p className="truncate text-xs text-slate-500">{u.email}</p>
             </div>
-            <details className="relative">
-              <summary className="cursor-pointer list-none rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100">⋯</summary>
-              <div className="absolute right-0 z-10 mt-1 w-52 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-slate-200">
-                <button className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50" onClick={() => setRole(u, u.rolle === "admin" ? "mitglied" : "admin")}>
-                  {u.rolle === "admin" ? "Zu Mitglied machen" : "Zu Admin machen"}
-                </button>
-                <button className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50" onClick={() => resetPw(u)}>
-                  Passwort zurücksetzen
-                </button>
-                <button className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => toggleActive(u)}>
-                  {u.active ? "Deaktivieren" : "Aktivieren"}
-                </button>
-              </div>
-            </details>
+            <button
+              className="shrink-0 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100"
+              onClick={() => setMenuUser(u)}
+              aria-label={`Aktionen für ${u.name}`}
+            >
+              ⋯
+            </button>
           </div>
         ))}
       </div>
+
+      {menuUser && (
+        <Modal open onClose={() => setMenuUser(null)} title={menuUser.name}>
+          <div className="space-y-2">
+            <button className="btn-ghost w-full justify-start" onClick={() => setRole(menuUser, menuUser.rolle === "admin" ? "mitglied" : "admin")}>
+              {menuUser.rolle === "admin" ? "Zu Mitglied machen" : "Zu Admin machen"}
+            </button>
+            <button className="btn-ghost w-full justify-start" onClick={() => resetPw(menuUser)}>
+              Passwort zurücksetzen
+            </button>
+            <button className="btn-danger w-full justify-start" onClick={() => toggleActive(menuUser)}>
+              {menuUser.active ? "Account deaktivieren" : "Account aktivieren"}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {pwResult && <PasswordResultModal result={pwResult} onClose={() => setPwResult(null)} />}
 
       <AddUserModal
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onSaved={(pw, name) => {
-          setNotice(`Account „${name}" angelegt. Platzhalter-Passwort: „${pw}".`);
+          setPwResult({ name, pw, created: true });
           load();
         }}
       />
     </div>
+  );
+}
+
+function PasswordResultModal({ result, onClose }: { result: { name: string; pw: string; created?: boolean }; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () =>
+    navigator.clipboard?.writeText(result.pw).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    });
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={result.created ? "Account angelegt" : "Passwort zurückgesetzt"}
+      footer={
+        <button className="btn-primary w-full" onClick={onClose}>
+          Fertig
+        </button>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-sm text-slate-600">
+          Platzhalter-Passwort für <span className="font-semibold text-ink">{result.name}</span> — beim ersten Login muss es geändert werden.
+        </p>
+        <button
+          type="button"
+          onClick={copy}
+          className="flex w-full items-center justify-between gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-left ring-1 ring-emerald-100 active:scale-[0.99]"
+        >
+          <span className="select-all break-all font-mono text-lg font-bold text-emerald-800">{result.pw}</span>
+          <span className="shrink-0 text-xs font-semibold text-emerald-600">{copied ? "Kopiert ✓" : "Kopieren"}</span>
+        </button>
+      </div>
+    </Modal>
   );
 }
 
