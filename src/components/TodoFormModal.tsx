@@ -9,7 +9,10 @@ import type { SubRessort, Todo, TodoStatus } from "@/lib/uiTypes";
 interface Props {
   open: boolean;
   onClose: () => void;
-  ressortId: number;
+  ressortId?: number | null;
+  // Wird eine Liste übergeben, erscheint ein „Ressort (optional)"-Auswahlfeld
+  // (z. B. im „Alle Todos"-Tab). Sonst ist das Ressort fix (ressortId).
+  ressortOptions?: { id: number; name: string; farbe: string }[];
   subRessorts: SubRessort[];
   todo?: Todo | null;
   defaultSubRessortId?: number | null;
@@ -19,16 +22,20 @@ interface Props {
 const STATUS: TodoStatus[] = ["offen", "in_arbeit", "erledigt"];
 const STATUS_LABEL: Record<TodoStatus, string> = { offen: "Offen", in_arbeit: "In Arbeit", erledigt: "Erledigt" };
 
-export function TodoFormModal({ open, onClose, ressortId, subRessorts, todo, defaultSubRessortId, onSaved }: Props) {
+export function TodoFormModal({ open, onClose, ressortId, ressortOptions, subRessorts, todo, defaultSubRessortId, onSaved }: Props) {
   const editing = !!todo;
   const [titel, setTitel] = useState(todo?.titel ?? "");
   const [beschreibung, setBeschreibung] = useState(todo?.beschreibung ?? "");
   const [status, setStatus] = useState<TodoStatus>(todo?.status ?? "offen");
   const [fristDatum, setFristDatum] = useState(todo?.fristDatum ?? "");
   const [subRessortId, setSubRessortId] = useState<number | null>(todo?.subRessortId ?? defaultSubRessortId ?? null);
+  const [ressort, setRessort] = useState<number | null>(todo?.ressortId ?? ressortId ?? null);
   const [assigneeIds, setAssigneeIds] = useState<number[]>(todo?.assignees.map((a) => a.id) ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const pickRessort = !!ressortOptions;
+  const effectiveRessort = pickRessort ? ressort : ressortId ?? null;
 
   const save = async () => {
     if (!titel.trim()) {
@@ -37,7 +44,7 @@ export function TodoFormModal({ open, onClose, ressortId, subRessorts, todo, def
     }
     setSaving(true);
     setError("");
-    const payload = { ressortId, titel: titel.trim(), beschreibung, status, fristDatum: fristDatum || null, subRessortId, assigneeIds };
+    const payload = { ressortId: effectiveRessort, titel: titel.trim(), beschreibung, status, fristDatum: fristDatum || null, subRessortId, assigneeIds };
     try {
       const res = editing
         ? await api.patch<{ todo: Todo }>(`/todos/${todo!.id}`, payload)
@@ -93,6 +100,27 @@ export function TodoFormModal({ open, onClose, ressortId, subRessorts, todo, def
             <input type="date" className="input" value={fristDatum ?? ""} onChange={(e) => setFristDatum(e.target.value)} />
           </div>
         </div>
+        {pickRessort && (
+          <div>
+            <label className="label">Ressort (optional)</label>
+            <select
+              className="input"
+              value={ressort ?? ""}
+              onChange={(e) => {
+                setRessort(e.target.value ? Number(e.target.value) : null);
+                setSubRessortId(null);
+              }}
+            >
+              <option value="">— keinem Ressort —</option>
+              {ressortOptions!.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-stone-400">Mit Ressort erscheint das Todo auch dort.</p>
+          </div>
+        )}
         {subRessorts.length > 0 && (
           <div>
             <label className="label">Sub-Ressort</label>

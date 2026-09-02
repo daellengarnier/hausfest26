@@ -209,9 +209,8 @@ export const shoppingItems = pgTable("shopping_items", {
 
 export const todos = pgTable("todos", {
   id: serial("id").primaryKey(),
-  ressortId: integer("ressortId")
-    .notNull()
-    .references(() => ressorts.id, { onDelete: "cascade" }),
+  // Optional: Todos können auch ohne Ressort existieren (allgemeine Liste).
+  ressortId: integer("ressortId").references(() => ressorts.id, { onDelete: "cascade" }),
   subRessortId: integer("subRessortId").references(() => subRessorts.id, {
     onDelete: "set null",
   }),

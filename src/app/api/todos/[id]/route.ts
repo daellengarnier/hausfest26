@@ -37,6 +37,11 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   if (body?.beschreibung !== undefined) patch.beschreibung = String(body.beschreibung);
   if (body?.status !== undefined && STATUS.includes(body.status)) patch.status = body.status;
   if (body?.fristDatum !== undefined) patch.fristDatum = body.fristDatum || null;
+  if (body?.ressortId !== undefined) {
+    patch.ressortId = body.ressortId ? Number(body.ressortId) : null;
+    // Ohne Ressort ergibt ein Sub-Ressort keinen Sinn.
+    if (!patch.ressortId) patch.subRessortId = null;
+  }
   if (body?.subRessortId !== undefined) patch.subRessortId = body.subRessortId ? Number(body.subRessortId) : null;
   patch.updatedAt = new Date();
   await db.update(todos).set(patch).where(eq(todos.id, todoId));

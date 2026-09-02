@@ -26,7 +26,7 @@ export async function GET() {
     })
     .from(todoAssignees)
     .innerJoin(todos, eq(todos.id, todoAssignees.todoId))
-    .innerJoin(ressorts, eq(ressorts.id, todos.ressortId))
+    .leftJoin(ressorts, eq(ressorts.id, todos.ressortId))
     .where(eq(todoAssignees.userId, uid))
     .orderBy(asc(todos.status), sql`${todos.fristDatum} NULLS LAST`);
 

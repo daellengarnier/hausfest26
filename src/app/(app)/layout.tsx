@@ -14,7 +14,7 @@ import { Icon, type IconName } from "@/components/Icon";
 const TABS: { href: string; label: string; icon: IconName; exact: boolean; badge?: boolean }[] = [
   { href: "/", label: "Übersicht", icon: "home", exact: true },
   { href: "/mine", label: "Meine Sachen", icon: "tasks", exact: false },
-  { href: "/einkauf", label: "Einkauf", icon: "cart", exact: false },
+  { href: "/todos", label: "Alle Todos", icon: "check", exact: false },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -149,6 +149,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   {unread > 0 && (
                     <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-terra px-1 text-[10px] font-bold text-white">{unread > 99 ? "99+" : unread}</span>
                   )}
+                </button>
+                <button onClick={() => { setMenuOpen(false); router.push("/einkauf"); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
+                  <Icon name="cart" size={17} className="text-stone-500" /> Einkaufsliste
                 </button>
                 <button onClick={() => { setMenuOpen(false); avatarFileRef.current?.click(); }} disabled={uploadingAvatar} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-stone-50">
                   <Icon name="user" size={17} className="text-stone-500" /> {uploadingAvatar ? "Lädt …" : "Profilbild ändern"}

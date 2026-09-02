@@ -50,13 +50,15 @@ export async function todoWithDetail(id: number) {
   const rows = await db.select().from(todos).where(eq(todos.id, id)).limit(1);
   const todo = rows[0];
   if (!todo) return null;
-  const ressort = (
-    await db
-      .select({ id: ressorts.id, name: ressorts.name, farbe: ressorts.farbe })
-      .from(ressorts)
-      .where(eq(ressorts.id, todo.ressortId))
-      .limit(1)
-  )[0];
+  const ressort = todo.ressortId
+    ? (
+        await db
+          .select({ id: ressorts.id, name: ressorts.name, farbe: ressorts.farbe })
+          .from(ressorts)
+          .where(eq(ressorts.id, todo.ressortId))
+          .limit(1)
+      )[0] ?? null
+    : null;
   const subRessort = todo.subRessortId
     ? (
         await db
